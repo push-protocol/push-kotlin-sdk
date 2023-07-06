@@ -106,4 +106,13 @@ class PgpTest {
     val aes_secret = Pgp.decrypt(ENC_MESSAGE, PGP_PK)
     assertEquals(aes_secret, "H58gh7d1AhOqQoU")
   }
+
+  @Test
+  fun pgpSignTest() {
+    val message = "Sing this message"
+    val signature = Pgp.sign(PGP_PK, message)
+
+    // TODO: asseert meesage has suffix and prefix
+    println(signature)
+  }
 }
