@@ -35,7 +35,11 @@ dependencies {
     implementation("com.google.guava:guava:31.1-jre")
     implementation("org.pgpainless:pgpainless-core:1.5.4")
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
     implementation("com.google.code.gson:gson:2.8.8")
+    implementation("org.web3j:core:5.0.0")
+    api("com.google.protobuf:protobuf-kotlin-lite:3.22.3")
+
 
 }
 

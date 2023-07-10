@@ -1,7 +1,7 @@
 package push.kotlin.sdk
 
-import kotlin.test.assertEquals
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class PushChatTest {
     @Test fun resolvesIPFSHash() {
@@ -76,6 +76,7 @@ class PushChatTest {
         val message = PushChat.getLatestMessage(hash, PGP_PK, ENV.staging)
 
         assert(message.messageContent.isNotEmpty())
+        println(message)
     }
 
     @Test fun conversationHistoryTest() {
