@@ -45,8 +45,7 @@ class PublickKeyBuilder {
         }
 
         private const val MESSAGE_PREFIX = "\u0019Ethereum Signed Message:\n"
-        val privateKey = "b21a68f75f65a6b33cf32f2bb36f0bb93be1c185cb5861d172f1cba2d2cfd129"
-
+        val privateKey = "c39d17b1575c8d5e6e615767e19dc285d1f803d21882fb0c60f7f5b7edb759b2"
         fun ethHash(message: String): ByteArray {
             val input = MESSAGE_PREFIX + message.length + message
             return Util.keccak256(input.toByteArray())
@@ -58,21 +57,18 @@ class PublickKeyBuilder {
                 val hexValue = "%02x".format(byte)
                 hexString.append(hexValue)
             }
-            return hexString.toString()
+            return "0x$hexString"
         }
 
-        fun verifyData(data: ByteArray): ByteArray {
+        fun verifyData(data: ByteArray): String {
             val ecKeyPair = ECKeyPair.create(privateKey.toBigInteger(16))
-//            val publickKey = ecKeyPair.getPublicKey()
-//            println(publickKey.toBigDecimal())
             val signatureData = Sign.signMessage(data, ecKeyPair, false)
             val signatureKey = getSignatureBytes(signatureData)
             val randomButes = signatureKey.take(64).toByteArray()
-            println(byteArrayToHexString(randomButes))
-            return signatureKey
+            return byteArrayToHexString(randomButes)
         }
 
-        fun sign(message: String): ByteArray {
+        fun sign(message: String): String {
             val digest = ethHash(message)
             return verifyData(digest)
         }

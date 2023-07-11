@@ -97,12 +97,9 @@ class Helpers {
 
                 val message = Hash.sha256("Hello world".toByteArray(StandardCharsets.UTF_8))
 
-//.toByteArray(StandardCharsets.UTF_8)
-//                val signature = Sign.signMessage(message, credentials.ecKeyPair)
-            val signature = runBlocking { privateKey }
+                val signature = runBlocking { privateKey }
 
-//            val signature = web3j.ethSign(credentials.address, message).send().result
-            println("Signature: $signature")
+                println("Signature: $signature")
         }
 
         private fun normalizeSignatureForVerification(signature: ByteArray): ByteArray {

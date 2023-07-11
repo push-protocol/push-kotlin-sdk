@@ -25,14 +25,15 @@ class HelpersTest {
         println(address)
     }
     @Test fun personal_signature () {
-        val sign = Helpers.personalSignature()
-        println(sign)
+        val message = "This is good place to find a city"
+        val sig = PublickKeyBuilder.sign(message)
+        println("Sig was $sig")
     }
 
     @Test fun verifaction() {
         val random = "sometsfhing".toByteArray()
         val sign = PublickKeyBuilder.verifyData(random)
-        println(sign)
+        println("signature was $sign")
     }
 
 }
