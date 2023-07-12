@@ -26,4 +26,11 @@ class AesTest {
 //     assertEquals(recoveredPGP, PGP_PK)
   }
 
+  @Test fun SigToBytesTest(){
+    val sig = "eip191:0x79725b6918f31cf01da680c8c11c8c6a208130c35459d64032444b7ba6b3b2cc447671d6c3be264fdfa08d5114cead9ca383f683809ec69f3c70c7101fc253221c"
+    val res = AESGCM.getSigToBytes(sig)
+//    val expected =
+//    val expectedRes = uintArrayOf(14, 0, 145, 0, 0, 151, 37, 182, 145, 143, 49, 207, 1, 218, 104, 12, 140, 17, 200, 198, 162, 8, 19, 12, 53, 69, 157, 100, 3, 36, 68, 183, 186, 107, 59, 44, 196, 71, 103, 29, 108, 59, 226, 100, 253, 250, 8, 213, 17, 76, 234, 217, 202, 56, 63, 104, 56, 9, 236, 105, 243, 199, 12, 113, 1, 252, 37, 50, 33)
+  }
+
 }

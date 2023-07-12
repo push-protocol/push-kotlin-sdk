@@ -12,20 +12,17 @@ class AESGCM {
         private const val GCM_TAG_LENGTH = 16
 
         fun hexToBytes(hex: String): ByteArray {
+            // We are expecting UnitBytes
             val bytes = mutableListOf<Byte>()
-
             // Temporary fix for the Ethereum Push Notification Service issue
             bytes.addAll(listOf(14, 0, 145, 0, 0).map { it.toByte() })
 
-            val sanitizedHex = hex.replace(Regex("[^0-9a-fA-F]"), "")
-            val paddedHex = if (sanitizedHex.length % 2 != 0) "0$sanitizedHex" else sanitizedHex
-
-            for (i in paddedHex.indices.step(2)) {
-                val sub = paddedHex.substring(i, i + 2)
+            // hex is of length -> 130, we need 65 got 70
+            for (i in 0..hex.count()-2 step 2) {
+                val sub = hex.substring(i, i + 2)
                 val num = sub.toIntOrNull(16)?.toByte() ?: 0.toByte()
                 bytes.add(num)
             }
-            println(bytes)
 
             return bytes.toByteArray()
         }
@@ -43,19 +40,23 @@ class AESGCM {
             val salt = hexStringToByteArray(saltHex)
             val sk = getSigToBytes(secret)
 
-            val ciphertextBytes = cipherData.copyOfRange(0, cipherData.size - 16)
-            val tag = cipherData.copyOfRange(cipherData.size - 16, cipherData.size)
+            // derive original cipher and tag from cipherData
+//            val ciphertextBytes = cipherData.copyOfRange(0, cipherData.size - 16)
+//            val tag = cipherData.copyOfRange(cipherData.size - 16, cipherData.size)
+
 
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
             val gcmParameterSpec = GCMParameterSpec(128, nonce)
-
             val secretKey = generateSecretKey(String(sk), salt)
 
             cipher.init(Cipher.DECRYPT_MODE, secretKey, gcmParameterSpec)
-            val decryptedBytes = cipher.doFinal(ciphertextBytes)
-            val decryptedText = String(decryptedBytes, StandardCharsets.UTF_8)
 
-            return decryptedText
+            val res = String(cipher.doFinal(cipherData), Charsets.UTF_8)
+
+//            val decryptedBytes = cipher.doFinal(ciphertextBytes)
+//            val decryptedText = String(decryptedBytes, StandardCharsets.UTF_8)
+
+            return res
         }
 
         private fun generateSecretKey(secret: String, salt: ByteArray): SecretKey {
