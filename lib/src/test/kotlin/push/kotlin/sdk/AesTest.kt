@@ -1,5 +1,6 @@
 package push.kotlin.sdk
 
+import AESGCM
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -21,7 +22,8 @@ class AesTest {
 
     val recoveredPGP = AESGCM.decrypt(encryptedPGPKeyHex, aesSecret, nonce, salt)
     // TODO:make this works
-    // assertEquals(recoveredPGP, PGP_PK)
+    println(recoveredPGP)
+//     assertEquals(recoveredPGP, PGP_PK)
   }
 
 }
