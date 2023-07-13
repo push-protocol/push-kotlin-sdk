@@ -1,11 +1,24 @@
-import org.bouncycastle.crypto.digests.SHA256Digest
-import org.bouncycastle.crypto.generators.HKDFBytesGenerator
-import org.bouncycastle.crypto.params.HKDFParameters
-import java.nio.charset.StandardCharsets
+
+import com.google.crypto.tink.subtle.Hkdf
+import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
+
+fun byteArrayToHexString(byteArray: ByteArray): String {
+    val hexString = StringBuilder()
+
+    for (b in byteArray) {
+        val st = String.format("%02X", b)
+        hexString.append(st)
+    }
+
+    return hexString.toString().lowercase()
+}
+
+
+val TAG_LENGTH = 16
 
 class AESGCM {
     companion object {
@@ -34,43 +47,45 @@ class AESGCM {
             return hexToBytes(remaining)
         }
 
+
+
+        fun encrypt(message: String, secret: String, nonceHex: String?=null, saltHex: String?=null):Triple<String,String,String>{
+            val messageBytes = message.trim().toByteArray()
+            val nonce =  if(nonceHex != null) hexStringToByteArray(nonceHex) else SecureRandom().generateSeed(32)
+            val salt = if(saltHex !=null) hexStringToByteArray(saltHex) else SecureRandom().generateSeed(12)
+            val sk = getSigToBytes(secret)
+
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            val spec = GCMParameterSpec(TAG_LENGTH*8, nonce)
+            val secretKey = generateSecretKey(sk, salt)
+
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, spec)
+            val result = cipher.doFinal(messageBytes)
+            return Triple(
+                byteArrayToHexString(result),
+                byteArrayToHexString(salt),
+                byteArrayToHexString(nonce)
+            )
+        }
+
         fun decrypt(cipherHex: String, secret: String, nonceHex: String, saltHex: String): String {
             val cipherData = hexStringToByteArray(cipherHex)
             val nonce = hexStringToByteArray(nonceHex)
             val salt = hexStringToByteArray(saltHex)
             val sk = getSigToBytes(secret)
 
-            // derive original cipher and tag from cipherData
-//            val ciphertextBytes = cipherData.copyOfRange(0, cipherData.size - 16)
-//            val tag = cipherData.copyOfRange(cipherData.size - 16, cipherData.size)
-
 
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-            val gcmParameterSpec = GCMParameterSpec(128, nonce)
-            val secretKey = generateSecretKey(String(sk), salt)
+            val gcmParameterSpec = GCMParameterSpec(TAG_LENGTH*8, nonce)
+            val keySpec = generateSecretKey(sk, salt)
 
-            cipher.init(Cipher.DECRYPT_MODE, secretKey, gcmParameterSpec)
+            cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmParameterSpec)
 
-            val res = String(cipher.doFinal(cipherData), Charsets.UTF_8)
-
-//            val decryptedBytes = cipher.doFinal(ciphertextBytes)
-//            val decryptedText = String(decryptedBytes, StandardCharsets.UTF_8)
-
-            return res
+            return String(cipher.doFinal(cipherData), Charsets.UTF_8).trim()
         }
 
-        private fun generateSecretKey(secret: String, salt: ByteArray): SecretKey {
-            val hkdf = HKDFBytesGenerator(SHA256Digest())
-            val hkdfParameters = HKDFParameters(
-                secret.toByteArray(StandardCharsets.UTF_8),
-                salt,
-                null
-            )
-            hkdf.init(hkdfParameters)
-
-            val derivedKey = ByteArray(32)
-            hkdf.generateBytes(derivedKey, 0, derivedKey.size)
-
+        private fun generateSecretKey(secret: ByteArray, salt: ByteArray): SecretKey {
+            val derivedKey = Hkdf.computeHkdf("HMACSHA256", secret, salt, null, 32)
             return SecretKeySpec(derivedKey, "AES")
         }
 
