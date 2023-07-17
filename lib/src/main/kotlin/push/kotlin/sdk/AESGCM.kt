@@ -6,6 +6,7 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
+
 fun byteArrayToHexString(byteArray: ByteArray): String {
     val hexString = StringBuilder()
 
@@ -23,6 +24,8 @@ val TAG_LENGTH = 16
 class AESGCM {
     companion object {
         private const val GCM_TAG_LENGTH = 16
+
+
 
         fun hexToBytes(hex: String): ByteArray {
             // We are expecting UnitBytes
@@ -104,5 +107,6 @@ class AESGCM {
 
             return byteArray
         }
+
     }
 }
