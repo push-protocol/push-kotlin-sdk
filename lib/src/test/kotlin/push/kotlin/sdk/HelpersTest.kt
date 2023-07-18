@@ -46,4 +46,13 @@ class HelpersTest {
         assertEquals(expectedSignature, signature)
     }
 
+    @Test fun DecryptUserProfile() {
+        val privateKey = "c39d17b1575c8d5e6e615767e19dc285d1f803d21882fb0c60f7f5b7edb759b2"
+        val expected = "eip191:0x79725b6918f31cf01da680c8c11c8c6a208130c35459d64032444b7ba6b3b2cc447671d6c3be264fdfa08d5114cead9ca383f683809ec69f3c70c7101fc253221c"
+        val something = Signature(privateKey)
+        val signature = something.DecryptProfile()
+        println("$signature signature")
+        assertEquals(expected, signature)
+    }
+
 }
