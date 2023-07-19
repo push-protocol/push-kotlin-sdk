@@ -2,8 +2,8 @@ package push.kotlin.sdk
 
 
 
-import kotlin.test.assertEquals
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class PushUserTest {
     @Test fun getUserTest() {

@@ -1,21 +1,46 @@
 package push.kotlin.sdk
 
+import AESGCM
+import com.google.gson.Gson
+
 class DecryptPgp {
-    fun decryptPgpKey(privateKey: String, encryptedPrivateKey: String): String {
-        val sign = Signature()
-        val wallet = Wallet(sign, privateKey)
-        val jsonData = encryptedPrivateKey.toByteArray(Charsets.UTF_8)
-        val cipherText = String(jsonData, 0,32)
-        val version = String(jsonData, 32, 4)
-        val salt = String(jsonData, 36, 16)
-        val nonce = String(jsonData, 52, 16)
-        val preKey = String(jsonData,52, 16)
-        println(nonce)
-        val secret = wallet.getEip191Signature(privateKey,"Enable Push Profile \n $preKey")
-        println(secret)
-        val pgpPrivateKey = AESGCM.decrypt(cipherText, secret, nonce, salt)
-        return ""
+
+    data class EncryptedPrivateKey(
+            val ciphertext: String,
+            val version: String,
+            val salt: String,
+            val nonce: String,
+            val preKey: String
+    ) {
+        companion object {
+            fun fromJsonString(jsonString: String): EncryptedPrivateKey? {
+                return try {
+                    val gson = Gson()
+                    gson.fromJson(jsonString, EncryptedPrivateKey::class.java)
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        }
     }
+
+    companion object{
+        fun decryptPgpKey(privateKey: String, encryptedPrivateKey: String): String {
+            val encPk = EncryptedPrivateKey.fromJsonString(encryptedPrivateKey) ?: throw IllegalStateException("Invalid Encrypted Pgp Key");
+            val wallet = Wallet(Signature(), privateKey)
+//            it should work like this
+//            val secret = wallet.getEip191Signature(privateKey,encPk.preKey)
+            val secret = wallet.getEip191Signature(privateKey,"Enable Push Profile \n"+encPk.preKey)
+
+        println(secret)
+        val pgpPrivateKey = AESGCM.decrypt(encPk.ciphertext, secret, encPk.nonce, encPk.salt)
+            println(pgpPrivateKey)
+            return pgpPrivateKey
+
+        }
+    }
+
+
 
 }
 
