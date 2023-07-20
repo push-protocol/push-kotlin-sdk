@@ -41,14 +41,8 @@ class AesTest {
     val message = "This is a good place to find a city"
 
     val (encMsg, salt, nonce) = AESGCM.encrypt(message,aesSecret)
-    println(salt)
-    println(nonce)
-    println(encMsg)
 
     val res = AESGCM.decrypt(encMsg,aesSecret,nonce,salt)
-    println(res)
     assertEquals(res, message)
-//66ab24ad0a14e5c1
-//    a60983b4b9c211fd2aaf6db64abc4e613322d58443853b11a18dd9ed803a0fb4
   }
 }

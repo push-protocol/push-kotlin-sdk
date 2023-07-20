@@ -36,8 +36,6 @@ class PushChatTest {
     @Test fun chatMessageDecryptionTest() {
         val cid = "bafyreidhqkzwewbmuof7onnm3jzr3frgyzyxb7afyjjrprf2kcpfjb4hqq"
         val message = PushChat.resolveIpfs(cid, ENV.staging) ?: throw IllegalStateException("");
-
-        println(message.messageContent)
     }
 
     @Test fun chatRequestTest() {

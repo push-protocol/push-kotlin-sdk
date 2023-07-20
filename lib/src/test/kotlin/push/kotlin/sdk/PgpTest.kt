@@ -121,8 +121,6 @@ class PgpTest {
       val actualPrefix = parts[0]
       val actualSuffix = parts[parts.size - 2]
 
-      println(prefix + actualPrefix.trim())
-      println(suffix + actualSuffix.trim())
       assertEquals(prefix, actualPrefix.trim())
       assertEquals(suffix, actualSuffix.trim())
     }

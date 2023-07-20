@@ -37,7 +37,6 @@ class HelpersTest {
 
     @Test fun signerAbstract() {
         val privateKey = "c39d17b1575c8d5e6e615767e19dc285d1f803d21882fb0c60f7f5b7edb759b2"
-
         val message = "Create Push Profile \n252f10c83610ebca1a059c0bae8255eba2f95be4d1d7bcfa89d7248a82d9f111"
         val signature = Signature.getEip191Signature(privateKey,message)
         val address = Signature.getAddress(privateKey)
@@ -56,7 +55,7 @@ class HelpersTest {
         println("$signature signature")
         assertEquals(expected, signature)
     }
-//
+
     @Test
     fun decryptPgpKeyTest() {
         val privateKey = "c39d17b1575c8d5e6e615767e19dc285d1f803d21882fb0c60f7f5b7edb759b2"

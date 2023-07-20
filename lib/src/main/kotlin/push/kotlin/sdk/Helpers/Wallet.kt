@@ -17,6 +17,6 @@ class Wallet(privateKey: String) {
     fun getEip191Signature(privateKey: String,message: String, version: String = "v1"): String {
         val hash = Signature.getEip191Signature(privateKey,message)
         val sigType = if (version == "v2") "eip191v2" else "eip191"
-        return "$sigType:$hash"
+        return "$sigType:$sig"
     }
 }
