@@ -103,7 +103,7 @@ val ENC_MESSAGE = "-----BEGIN PGP MESSAGE-----\n\nwcBMA4PKczkV0ei6AQf/Q8OQn+z73M
 
 class PgpTest {
   @Test fun pgpDecryptionTests() {
-    val aes_secret = Pgp.decrypt(ENC_MESSAGE, PGP_PK)
+    val aes_secret = Pgp.decrypt(ENC_MESSAGE, PGP_PK).getOrThrow()
     assertEquals(aes_secret, "H58gh7d1AhOqQoU")
   }
 

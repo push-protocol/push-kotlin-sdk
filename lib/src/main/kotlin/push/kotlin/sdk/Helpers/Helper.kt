@@ -9,8 +9,8 @@ class Helpers {
         }
 
         fun decryptMessage(encryptedSecret: String, messageContent: String, pgpPrivateKey: String): String {
-            val AESKey = Pgp.decrypt(encryptedSecret, pgpPrivateKey)
-            val message = AESCBC.decrypt(AESKey, messageContent)
+            val AESKey = Pgp.decrypt(encryptedSecret, pgpPrivateKey).getOrThrow()
+            val message = AESCBC.decrypt(AESKey.toString(), messageContent)
             return message
         }
 

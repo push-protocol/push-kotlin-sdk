@@ -20,7 +20,7 @@ class AesTest {
     val salt = "8df3cc0bbc7434b2ed7ca674b13d6c1180a5300fec3f09ad6ad9f8c8cc2a26ba"
     val aesSecret = "eip191:0x79725b6918f31cf01da680c8c11c8c6a208130c35459d64032444b7ba6b3b2cc447671d6c3be264fdfa08d5114cead9ca383f683809ec69f3c70c7101fc253221c"
 
-    val recoveredPGP = AESGCM.decrypt(encryptedPGPKeyHex, aesSecret, nonce, salt)
+    val recoveredPGP = AESGCM.decrypt(encryptedPGPKeyHex, aesSecret, nonce, salt).getOrThrow()
     assertEquals(recoveredPGP, PGP_PK.trim())
   }
 
@@ -42,7 +42,7 @@ class AesTest {
 
     val (encMsg, salt, nonce) = AESGCM.encrypt(message,aesSecret)
 
-    val res = AESGCM.decrypt(encMsg,aesSecret,nonce,salt)
+    val res = AESGCM.decrypt(encMsg,aesSecret,nonce,salt).getOrThrow()
     assertEquals(res, message)
   }
 }

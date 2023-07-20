@@ -14,12 +14,18 @@ import org.pgpainless.encryption_signing.BcHashContextSigner
 import org.pgpainless.encryption_signing.EncryptionOptions
 import org.pgpainless.encryption_signing.ProducerOptions
 import org.pgpainless.key.protection.SecretKeyRingProtector
+import org.pgpainless.util.ArmorUtils
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
-import org.pgpainless.util.ArmorUtils;
 
+
+class CustomException(message: String) : Exception(message) {
+    override fun toString(): String {
+        return message ?: "Unknown error occurred"
+    }
+}
 
 
 class Pgp {
@@ -31,39 +37,48 @@ class Pgp {
 //
 //
 
-    public fun encrypt(message: String, userPublicKey: PGPPublicKeyRing): String {
-      val outputStream = ByteArrayOutputStream()
-      val encryptionStream = PGPainless.encryptAndOrSign()
-              .onOutputStream(outputStream)
-              .withOptions(
-                      ProducerOptions.encrypt(
-                              EncryptionOptions().addRecipient(userPublicKey)
-                      ).setAsciiArmor(true)
-              )
+    public fun encrypt(message: String, userPublicKey: PGPPublicKeyRing): Result<String> {
+        return try {
+            val outputStream = ByteArrayOutputStream()
+            val encryptionStream = PGPainless.encryptAndOrSign()
+                .onOutputStream(outputStream)
+                .withOptions(
+                    ProducerOptions.encrypt(
+                        EncryptionOptions().addRecipient(userPublicKey)
+                    ).setAsciiArmor(true)
+                )
 
-      val inputStream = ByteArrayInputStream(message.toByteArray())
-      Streams.pipeAll(inputStream, encryptionStream);
-      encryptionStream.close();
+            val inputStream = ByteArrayInputStream(message.toByteArray())
+            Streams.pipeAll(inputStream, encryptionStream);
+            encryptionStream.close();
 
-      return outputStream.toByteArray().toString(Charsets.UTF_8)
+            Result.success(outputStream.toByteArray().toString(Charsets.UTF_8))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
-    public fun decrypt(encryptedMessage: String, pgpPrivateKey: String): String {
-      val secretKey:PGPSecretKeyRing = PGPainless.readKeyRing()
-              .secretKeyRing(pgpPrivateKey) ?: throw IllegalStateException("Secret key not found");
+    public fun decrypt(encryptedMessage: String, pgpPrivateKey: String): Result<String> {
+        return try {
+            val secretKey:PGPSecretKeyRing = PGPainless.readKeyRing()
+                .secretKeyRing(pgpPrivateKey) ?: throw IllegalStateException("Secret key not found");
 
-      val decryptedInputStream = ByteArrayInputStream(encryptedMessage.toByteArray())
-      val decryptionStream = PGPainless.decryptAndOrVerify()
-              .onInputStream(decryptedInputStream)
-              .withOptions(
-                      ConsumerOptions().addDecryptionKey(secretKey)
-              )
+            val decryptedInputStream = ByteArrayInputStream(encryptedMessage.toByteArray())
+            val decryptionStream = PGPainless.decryptAndOrVerify()
+                .onInputStream(decryptedInputStream)
+                .withOptions(
+                    ConsumerOptions().addDecryptionKey(secretKey)
+                )
 
-      val outputStream = ByteArrayOutputStream()
-      Streams.pipeAll(decryptionStream, outputStream);
-      decryptionStream.close();
+            val outputStream = ByteArrayOutputStream()
+            Streams.pipeAll(decryptionStream, outputStream);
+            decryptionStream.close();
 
-      return outputStream.toString(Charsets.UTF_8)
+            Result.success(outputStream.toString(Charsets.UTF_8))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
     }
 
     public fun sign(pgpPrivateKey: String, message: String): String {

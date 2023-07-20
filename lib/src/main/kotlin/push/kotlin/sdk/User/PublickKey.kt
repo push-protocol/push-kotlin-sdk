@@ -34,21 +34,30 @@ class PublickKeyBuilder {
             return mergedArray
         }
 
-        fun getSignatureBytes(sig: SignatureData): ByteArray {
-            val v = sig.v[0]
-            val fixedV = if (v >= 27) (v - 27).toByte() else v
-            return merge(
-                sig.r,
-                sig.s,
-                byteArrayOf(fixedV),
-            )
+        fun getSignatureBytes(sig: SignatureData): Result<ByteArray> {
+            return try {
+                val v = sig.v[0]
+                val fixedV = if (v >= 27) (v - 27).toByte() else v
+                Result.success(merge(
+                    sig.r,
+                    sig.s,
+                    byteArrayOf(fixedV))
+                )
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
         }
 
         private const val MESSAGE_PREFIX = "\u0019Ethereum Signed Message:\n"
         val privateKey = "c39d17b1575c8d5e6e615767e19dc285d1f803d21882fb0c60f7f5b7edb759b2"
-        fun ethHash(message: String): ByteArray {
-            val input = MESSAGE_PREFIX + message.length + message
-            return Util.keccak256(input.toByteArray())
+        fun ethHash(message: String): Result<ByteArray> {
+            return try {
+                val input = MESSAGE_PREFIX + message.length + message
+                Result.success(Util.keccak256(input.toByteArray()))
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+
         }
 
         fun byteArrayToHexString(byteArray: ByteArray): String {
@@ -60,17 +69,21 @@ class PublickKeyBuilder {
             return "0x$hexString"
         }
 
-        fun verifyData(data: ByteArray): String {
-            val ecKeyPair = ECKeyPair.create(privateKey.toBigInteger(16))
-            val signatureData = Sign.signMessage(data, ecKeyPair, false)
-            val signatureKey = getSignatureBytes(signatureData)
-            val randomButes = signatureKey.take(64).toByteArray()
-            return byteArrayToHexString(randomButes)
+        fun verifyData(data: ByteArray): Result<String> {
+            return try {
+                val ecKeyPair = ECKeyPair.create(privateKey.toBigInteger(16))
+                val signatureData = Sign.signMessage(data, ecKeyPair, false)
+                val signatureKey = getSignatureBytes(signatureData).getOrThrow()
+                val randomButes = signatureKey.take(64).toByteArray()
+                Result.success(byteArrayToHexString(randomButes))
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
         }
 
         fun sign(message: String): String {
-            val digest = ethHash(message)
-            return verifyData(digest)
+            val digest = ethHash(message).getOrThrow()
+            return verifyData(digest).getOrThrow()
         }
     }
 }

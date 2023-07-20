@@ -52,39 +52,45 @@ class AESGCM {
 
 
 
-        fun encrypt(message: String, secret: String, nonceHex: String?=null, saltHex: String?=null):Triple<String,String,String>{
-            val messageBytes = message.trim().toByteArray()
-            val nonce =  if(nonceHex != null) hexStringToByteArray(nonceHex) else SecureRandom().generateSeed(32)
-            val salt = if(saltHex !=null) hexStringToByteArray(saltHex) else SecureRandom().generateSeed(12)
-            val sk = getSigToBytes(secret)
+        fun encrypt(message: String, secret: String, nonceHex: String?=null, saltHex: String?=null): Triple<String,String,String>{
+                val messageBytes = message.trim().toByteArray()
+                val nonce =  if(nonceHex != null) hexStringToByteArray(nonceHex) else SecureRandom().generateSeed(32)
+                val salt = if(saltHex !=null) hexStringToByteArray(saltHex) else SecureRandom().generateSeed(12)
+                val sk = getSigToBytes(secret)
 
-            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-            val spec = GCMParameterSpec(TAG_LENGTH*8, nonce)
-            val secretKey = generateSecretKey(sk, salt)
+                val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+                val spec = GCMParameterSpec(TAG_LENGTH*8, nonce)
+                val secretKey = generateSecretKey(sk, salt)
 
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey, spec)
-            val result = cipher.doFinal(messageBytes)
-            return Triple(
-                byteArrayToHexString(result),
-                byteArrayToHexString(salt),
-                byteArrayToHexString(nonce)
-            )
+                cipher.init(Cipher.ENCRYPT_MODE, secretKey, spec)
+                val result = cipher.doFinal(messageBytes)
+                return Triple(
+                    byteArrayToHexString(result),
+                    byteArrayToHexString(salt),
+                    byteArrayToHexString(nonce)
+                )
+
         }
 
-        fun decrypt(cipherHex: String, secret: String, nonceHex: String, saltHex: String): String {
-            val cipherData = hexStringToByteArray(cipherHex)
-            val nonce = hexStringToByteArray(nonceHex)
-            val salt = hexStringToByteArray(saltHex)
-            val sk = getSigToBytes(secret)
+        fun decrypt(cipherHex: String, secret: String, nonceHex: String, saltHex: String): Result<String> {
+            return try {
+                val cipherData = hexStringToByteArray(cipherHex)
+                val nonce = hexStringToByteArray(nonceHex)
+                val salt = hexStringToByteArray(saltHex)
+                val sk = getSigToBytes(secret)
 
 
-            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-            val gcmParameterSpec = GCMParameterSpec(TAG_LENGTH*8, nonce)
-            val keySpec = generateSecretKey(sk, salt)
+                val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+                val gcmParameterSpec = GCMParameterSpec(TAG_LENGTH*8, nonce)
+                val keySpec = generateSecretKey(sk, salt)
 
-            cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmParameterSpec)
+                cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmParameterSpec)
 
-            return String(cipher.doFinal(cipherData), Charsets.UTF_8).trim()
+                Result.success(String(cipher.doFinal(cipherData), Charsets.UTF_8).trim())
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+
         }
 
         private fun generateSecretKey(secret: ByteArray, salt: ByteArray): SecretKey {
