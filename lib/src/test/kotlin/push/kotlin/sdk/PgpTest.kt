@@ -103,7 +103,26 @@ val ENC_MESSAGE = "-----BEGIN PGP MESSAGE-----\n\nwcBMA4PKczkV0ei6AQf/Q8OQn+z73M
 
 class PgpTest {
   @Test fun pgpDecryptionTests() {
-    val aes_secret = Pgp.decrypt(ENC_MESSAGE, PGP_PK)
+    val aes_secret = Pgp.decrypt(ENC_MESSAGE, PGP_PK).getOrThrow()
     assertEquals(aes_secret, "H58gh7d1AhOqQoU")
+  }
+
+  class PgpTest {
+
+    @Test
+    fun pgpSignTest() {
+      val message = "Sing this message"
+      val signature = Pgp.sign(PGP_PK, message)
+
+      val prefix = "-----BEGIN PGP SIGNATURE-----"
+      val suffix = "-----END PGP SIGNATURE-----"
+
+      val parts = signature.split("\n")
+      val actualPrefix = parts[0]
+      val actualSuffix = parts[parts.size - 2]
+
+      assertEquals(prefix, actualPrefix.trim())
+      assertEquals(suffix, actualSuffix.trim())
+    }
   }
 }
