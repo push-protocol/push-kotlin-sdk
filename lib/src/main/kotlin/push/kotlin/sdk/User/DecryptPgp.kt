@@ -27,13 +27,10 @@ class DecryptPgp {
     companion object{
         fun decryptPgpKey(encryptedPrivateKey: String, signer:Signer): String {
             val encPk = EncryptedPrivateKey.fromJsonString(encryptedPrivateKey) ?: throw IllegalStateException("Invalid Encrypted Pgp Key");
-            val wallet = Wallet(privateKey)
-//            it should work like this
-//            val secret = wallet.getEip191Signature(privateKey,encPk.preKey)
-            val secret = wallet.getEip191Signature(privateKey,"Enable Push Profile \n"+encPk.preKey)
+            val wallet = Wallet(signer)
+            val secret = wallet.getEip191Signature("Enable Push Profile \n"+encPk.preKey)
 
-            val pgpPrivateKey = AESGCM.decrypt(encPk.ciphertext, secret, encPk.nonce, encPk.salt)
-            return pgpPrivateKey
+            return AESGCM.decrypt(encPk.ciphertext, secret, encPk.nonce, encPk.salt)
         }
     }
 }
