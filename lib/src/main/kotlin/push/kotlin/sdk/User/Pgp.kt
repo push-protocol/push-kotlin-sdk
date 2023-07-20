@@ -31,12 +31,6 @@ class CustomException(message: String) : Exception(message) {
 class Pgp {
 
   companion object {
-//
-//        val userPublicKey:PGPPublicKeyRing = PGPainless.readKeyRing()
-//                .publicKeyRing(UserPublicKey) ?: throw IllegalStateException("Secret key not found");
-//
-//
-
     public fun encrypt(message: String, userPublicKey: PGPPublicKeyRing): Result<String> {
         return try {
             val outputStream = ByteArrayOutputStream()

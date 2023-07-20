@@ -7,8 +7,8 @@ This package gives access to Push Protocol (Push Nodes) APIs. Visit [Developer D
 
 ```kotlin
 abstract class Signer {
-    abstract fun getEip191Signature(message: String): String
-    abstract fun getAddress(): String
+    abstract fun getEip191Signature(message: String): Result<String>
+    abstract fun getAddress(): Result<String>
 }
 ```
 
@@ -18,22 +18,32 @@ import org.web3j.crypto.Credentials
 import org.web3j.crypto.Sign
 import org.web3j.utils.Numeric
 
-class PrivateKeySigner(private val privateKey: String): Signer(){
-    override fun getEip191Signature(message: String): String {
-        val credentials: Credentials = Credentials.create(privateKey)
-        val signatureData = Sign.signPrefixedMessage(message.toByteArray(Charsets.UTF_8), credentials.ecKeyPair)
-        val r = Numeric.toHexStringNoPrefix(signatureData.r)
-        val s = Numeric.toHexStringNoPrefix(signatureData.s)
-        val v = Numeric.toHexStringNoPrefix(signatureData.v)
-        val signature = r + s + v
-        return "0x$signature"
+class PrivateKeySigner(private val privateKey: String) : Signer() {
+
+    override fun getEip191Signature(message: String): Result<String> {
+        return try {
+            val credentials: Credentials = Credentials.create(privateKey)
+            val signatureData = Sign.signPrefixedMessage(message.toByteArray(Charsets.UTF_8), credentials.ecKeyPair)
+            val r = Numeric.toHexStringNoPrefix(signatureData.r)
+            val s = Numeric.toHexStringNoPrefix(signatureData.s)
+            val v = Numeric.toHexStringNoPrefix(signatureData.v)
+            val signature = r + s + v
+            Result.success("0x$signature")
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
-    override fun getAddress(): String {
-        val credentials: Credentials = Credentials.create(privateKey)
-        return credentials.address
+    override fun getAddress(): Result<String> {
+        return try {
+            val credentials: Credentials = Credentials.create(privateKey)
+            Result.success(credentials.address)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }
+
 ```
 
 ## Chat User
@@ -52,5 +62,5 @@ class PrivateKeySigner(private val privateKey: String): Signer(){
     val signer = PrivateKeySigner(ETH_PRIVATE_KEY_STRING)
     val user:PushUser.UserProfile? = PushUser.getUser(userAddress, ENV.staging)
     
-    val decryptedPgpKey = PushUser.DecryptPgp.decryptPgpKey(user.encryptedPrivateKey, signer)
+    val decryptedPgpKey:Result<String> = PushUser.DecryptPgp.decryptPgpKey(user.encryptedPrivateKey, signer)
 ```

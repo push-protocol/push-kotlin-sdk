@@ -25,12 +25,16 @@ class DecryptPgp {
     }
 
     companion object{
-        fun decryptPgpKey(encryptedPrivateKey: String, signer:Signer): String {
-            val encPk = EncryptedPrivateKey.fromJsonString(encryptedPrivateKey) ?: throw IllegalStateException("Invalid Encrypted Pgp Key");
-            val wallet = Wallet(signer)
-            val secret = wallet.getEip191Signature("Enable Push Profile \n"+encPk.preKey).getOrThrow()
-
-            return AESGCM.decrypt(encPk.ciphertext, secret, encPk.nonce, encPk.salt).getOrThrow()
+        fun decryptPgpKey(encryptedPrivateKey: String, signer:Signer): Result<String> {
+            return try {
+                val encPk = EncryptedPrivateKey.fromJsonString(encryptedPrivateKey)
+                        ?: throw IllegalStateException("Invalid Encrypted Pgp Key");
+                val wallet = Wallet(signer)
+                val secret = wallet.getEip191Signature("Enable Push Profile \n" + encPk.preKey).getOrThrow()
+                return Result.success(AESGCM.decrypt(encPk.ciphertext, secret, encPk.nonce, encPk.salt).getOrThrow())
+            }catch (e:Exception){
+                Result.failure(e)
+            }
         }
     }
 }

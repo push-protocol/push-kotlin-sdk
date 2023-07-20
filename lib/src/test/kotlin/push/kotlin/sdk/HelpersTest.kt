@@ -81,8 +81,7 @@ class HelpersTest {
         val expectedPrefix = "-----BEGIN PGP PRIVATE KEY BLOCK-----"
         val expectedSuffix = "-----END PGP PRIVATE KEY BLOCK-----"
 
-        val decryptedPgpKey = DecryptPgp.decryptPgpKey(encryptedPrivateKey,signer)
-
+        val decryptedPgpKey = DecryptPgp.decryptPgpKey(encryptedPrivateKey,signer).getOrThrow()
         val parts = decryptedPgpKey.split("\n")
         val actualPrefix = parts[0]
         val actualSuffix = parts[parts.size - 1]
