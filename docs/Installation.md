@@ -14,7 +14,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.doematter:push-kotlin-sdk:SDK_VERSION")
+    implementation("com.github.ethereum-push-notification-service:push-kotlin-sdk:SDK_VERSION")
 }
 ```
 
