@@ -40,8 +40,8 @@ dependencies {
     implementation("org.web3j:core:4.9.0")
     implementation("com.google.crypto.tink:tink-android:1.2.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
-    implementation("org.slf4j:slf4j-api:1.7.32")
-    implementation("ch.qos.logback:logback-classic:1.2.5")
+    // implementation("org.slf4j:slf4j-api:1.7.32")
+    // implementation("ch.qos.logback:logback-classic:1.2.5")
     api("com.google.protobuf:protobuf-kotlin-lite:3.22.3")
 
 
