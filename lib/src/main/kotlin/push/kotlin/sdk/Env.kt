@@ -29,6 +29,17 @@ object PushURI {
         return  "${getBaseUri(env)}/chat/conversationhash/$threadHash?fetchLimit=${limit}"
     }
 
+    fun OptInChannel(env: ENV, channel: String): String {
+        return "${getBaseUri(env)}/channels/$channel/subscribe"
+    }
+
+    fun getChannels(page: Number, limit: Number,env: ENV): String {
+        return "${getBaseUri(env)}/channels?page=1&limit=1"
+    }
+
+    fun getChannel(env: ENV, channel: String): String {
+        return "${getBaseUri(env)}/channels/"
+    }
 
     fun getBaseUri(env: ENV, version:String="v1"):String {
 

@@ -1,4 +1,6 @@
 package push.kotlin.sdk
+import push.kotlin.sdk.channels.Channel
+import push.kotlin.sdk.channels.Opt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -87,5 +89,23 @@ class HelpersTest {
         val actualSuffix = parts[parts.size - 1]
         assertEquals(expectedPrefix, actualPrefix)
         assertEquals(expectedSuffix, actualSuffix)
+    }
+
+    @Test
+    fun GettingChannels(){
+        val options =  Channel.getChannel("0xEDF59F183584107B20e2c95189A4423224bba8F2", ENV.staging, 1, 1)
+        println(options)
+    }
+
+    @Test
+    fun GettingAllChannels () {
+        val options = Channel.getAllChannels(ENV.staging, 1, 1)
+        println(options)
+    }
+
+    @Test
+    fun OptingINchannels() {
+        val options = Opt.OptInChannel(ENV.staging, "0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78", "0xEDF59F183584107B20e2c95189A4423224bba8F2", "c39d17b1575c8d5e6e615767e19dc285d1f803d21882fb0c60f7f5b7edb759b2")
+        println(options)
     }
 }

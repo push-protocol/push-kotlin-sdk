@@ -5,7 +5,7 @@ import org.web3j.crypto.WalletUtils
 class Helpers {
     companion object {
         fun walletToCAIP(address: String): String {
-            return "eip155:${address}"
+            return "eip155:5:${address}"
         }
 
         fun decryptMessage(encryptedSecret: String, messageContent: String, pgpPrivateKey: String): String {
