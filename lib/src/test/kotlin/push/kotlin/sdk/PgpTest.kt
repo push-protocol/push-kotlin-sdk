@@ -36,7 +36,7 @@ E9aL7drb4L/4ZQ9ZvKilPrfpkbXbRfNub1wJKCQVFnXxtXB83hlyq/tqrzeXjZai
 8+HQfOVr7NE7e20Vtat7P51yzZTBCPfOsPdHPRdJeWrIS76DmfKF0ATKOw0PNfWB
 EIXKzpU+pdxSjyFbgg9NGOczMtYUTkheIQeBerPjFWsoCEtHMcE=
 =5cZE
------END PGP PUBLIC KEY BLOCK-----"
+-----END PGP PUBLIC KEY BLOCK-----
 """
 
 val PGP_PK = """
@@ -111,8 +111,8 @@ class PgpTest {
 
     @Test
     fun pgpSignTest() {
-      val message = "Sing this message"
-      val signature = Pgp.sign(PGP_PK, message)
+      val message = "This is a good place to find a city"
+      val signature = Pgp.sign(PGP_PK, message).getOrThrow()
 
       val prefix = "-----BEGIN PGP SIGNATURE-----"
       val suffix = "-----END PGP SIGNATURE-----"

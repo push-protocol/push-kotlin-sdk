@@ -1,24 +1,20 @@
 package push.kotlin.sdk
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider
-import org.bouncycastle.openpgp.PGPException
 import org.bouncycastle.openpgp.PGPPublicKeyRing
 import org.bouncycastle.openpgp.PGPSecretKeyRing
-import org.bouncycastle.openpgp.PGPSignature
 import org.bouncycastle.util.io.Streams
 import org.pgpainless.PGPainless
-import org.pgpainless.algorithm.HashAlgorithm
-import org.pgpainless.algorithm.SignatureType
+import org.pgpainless.algorithm.DocumentSignatureType
 import org.pgpainless.decryption_verification.ConsumerOptions
-import org.pgpainless.encryption_signing.BcHashContextSigner
 import org.pgpainless.encryption_signing.EncryptionOptions
 import org.pgpainless.encryption_signing.ProducerOptions
+import org.pgpainless.encryption_signing.SigningOptions
+import org.pgpainless.key.SubkeyIdentifier
 import org.pgpainless.key.protection.SecretKeyRingProtector
 import org.pgpainless.util.ArmorUtils
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.security.MessageDigest
-import java.security.NoSuchAlgorithmException
+import java.io.InputStream
 
 
 class CustomException(message: String) : Exception(message) {
@@ -75,27 +71,36 @@ class Pgp {
 
     }
 
-    public fun sign(pgpPrivateKey: String, message: String): String {
-      val outputStream = ByteArrayOutputStream()
-      val secretKeys:PGPSecretKeyRing = PGPainless.readKeyRing()
-              .secretKeyRing(pgpPrivateKey) ?: throw IllegalStateException("Secret key not found");
+    public fun sign(pgpPrivateKey: String, message: String): Result<String> {
+      return try {
+        val secretKey: PGPSecretKeyRing = PGPainless.readKeyRing()
+                .secretKeyRing(pgpPrivateKey) ?: throw IllegalStateException("Secret key not found");
 
-      val messageBytes: ByteArray = message.toByteArray()
-      val messageIn = ByteArrayInputStream(messageBytes)
+        val protector = SecretKeyRingProtector.unprotectedKeys();
 
-      val signature: PGPSignature = signMessage(messageBytes, HashAlgorithm.SHA256, secretKeys) ?: throw IllegalStateException("Secret key not found");
+        val messageIn: InputStream = ByteArrayInputStream(message.toByteArray())
 
-      return ArmorUtils.toAsciiArmoredString(signature)
+        val ignoreMe = ByteArrayOutputStream()
+        val signingStream = PGPainless.encryptAndOrSign()
+                .onOutputStream(ignoreMe)
+                .withOptions(ProducerOptions.sign(SigningOptions.get()
+                        .addDetachedSignature(protector, secretKey, DocumentSignatureType.CANONICAL_TEXT_DOCUMENT))
+                        .setAsciiArmor(false)
+                )
+
+        Streams.pipeAll(messageIn, signingStream)
+        signingStream.close()
+
+        val result = signingStream.result
+
+        val signingKey = PGPainless.inspectKeyRing(secretKey).signingSubkeys[0]
+        val signature = result.detachedSignatures[SubkeyIdentifier(secretKey, signingKey.keyID)].iterator().next()
+        val detachedSignature = ArmorUtils.toAsciiArmoredString(signature.encoded)
+
+        return Result.success(detachedSignature)
+      }catch (e:Exception){
+        Result.failure(e)
+      }
     }
-
-    @Throws(NoSuchAlgorithmException::class, PGPException::class)
-    private fun signMessage(message: ByteArray, hashAlgorithm: HashAlgorithm, secretKeys: PGPSecretKeyRing): PGPSignature? {
-      // Prepare the hash context
-      // This would be done by the caller application
-      val messageDigest = MessageDigest.getInstance(hashAlgorithm.algorithmName, BouncyCastleProvider())
-      messageDigest.update(message)
-      return BcHashContextSigner.signHashContext(messageDigest, SignatureType.BINARY_DOCUMENT, secretKeys, SecretKeyRingProtector.unprotectedKeys())
-    }
-
   }
 }
