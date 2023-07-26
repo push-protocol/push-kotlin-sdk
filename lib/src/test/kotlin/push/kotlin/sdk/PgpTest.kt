@@ -124,5 +124,19 @@ class PgpTest {
       assertEquals(prefix, actualPrefix.trim())
       assertEquals(suffix, actualSuffix.trim())
     }
+
+    @Test
+    fun pgpGenerate(){
+      val prefix = "-----BEGIN PGP"
+      val suffix = "-----END PGP"
+
+      val (publicKey, privateKey) = Pgp.generate()
+
+      assert(publicKey.contains(prefix))
+      assert(publicKey.contains(suffix))
+
+      assert(privateKey.contains(prefix))
+      assert(privateKey.contains(suffix))
+    }
   }
 }

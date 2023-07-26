@@ -10,12 +10,12 @@ import org.pgpainless.encryption_signing.EncryptionOptions
 import org.pgpainless.encryption_signing.ProducerOptions
 import org.pgpainless.encryption_signing.SigningOptions
 import org.pgpainless.key.SubkeyIdentifier
+import org.pgpainless.key.generation.type.rsa.RsaLength
 import org.pgpainless.key.protection.SecretKeyRingProtector
 import org.pgpainless.util.ArmorUtils
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
-
 
 class CustomException(message: String) : Exception(message) {
     override fun toString(): String {
@@ -101,6 +101,15 @@ class Pgp {
       }catch (e:Exception){
         Result.failure(e)
       }
+    }
+
+    public fun generate():Pair<String, String>{
+        val secretKey: PGPSecretKeyRing = PGPainless.generateKeyRing().simpleRsaKeyRing("Juliet <juliet@montague.lit>", RsaLength._2048)
+
+        val privateKey = ArmorUtils.toAsciiArmoredString(secretKey.encoded)
+        val publicKey = ArmorUtils.toAsciiArmoredString(secretKey.getPublicKey().encoded)
+
+        return Pair(publicKey, privateKey)
     }
   }
 }
