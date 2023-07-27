@@ -47,10 +47,9 @@ class Opt {
 
 
         fun OptInChannel(env: ENV, channel: String, subscriber: String, privateKey: String): String {
-            val url = PushURI.OptInChannel(env, channel)
+
             val message = getOptInMessage(channel, subscriber, ENV.staging)
             println(message)
-            println(url)
             val signatureFunc = PrivateKeySigner(privateKey)
             val userAddress = signatureFunc.getAddress()
 
@@ -64,35 +63,8 @@ class Opt {
             val userAddressCAIP = Helpers.walletToCAIP(userAddress.toString())
             val requestBody = OptRequest.optRequest(verificationProof.toString(), channel, subscriber, true)
             println(requestBody)
+            val url = PushURI.OptInChannel(env, channel)
 
-//            val url = PushURI.OptInChannel(ENV.staging, channelAddressCAIP)
-
-//            try {
-//                println(url)
-//                val obj = URL(url)
-//                val connection =  obj.openConnection() as HttpURLConnection
-//                connection.requestMethod = "POST"
-//                val responseCode = connection.responseCode
-//
-//                if(responseCode == HttpURLConnection.HTTP_OK) {
-//                    var responseReader = BufferedReader(InputStreamReader(connection.inputStream))
-//                    var response = StringBuilder()
-//
-//                    var inputLine: String?
-//                    while (responseReader.readLine().also { inputLine = it } !== null) {
-//                        response.append(inputLine)
-//                    }
-//                    responseReader.close()
-//
-//                    return response.toString()
-//                } else {
-//                    println("Unable to fetch it brooo: $responseCode")
-//                    return ""
-//                }
-//            } catch (e: Exception) {
-//                println("Error while fetching it ${e.message}")
-//                return ""
-//            }
             return ""
         }
     }

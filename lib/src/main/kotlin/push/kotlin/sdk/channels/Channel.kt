@@ -8,19 +8,22 @@ import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 
+data class ChannelOptions(
+        val channel: String,
+        val env: ENV,
+        val page: Number,
+        val limit: Number
+)
+
 class Channel {
     companion object {
-
-        fun getChannel(channel: String, env: ENV, page: Number, limit: Number): String {
-            val url = PushURI.getChannel(env, channel)
-            val address = Helpers.walletToCAIP(channel)
-            println("$address all address")
-
-            val urlString = "$url/$address"
+        fun getChannel(options: ChannelOptions): ChannelOptions? {
+            val channelCAIP = Helpers.walletToPCAIP(options.env, options.channel)
+            val url = PushURI.getChannel(options.env, channelCAIP)
 
             try {
-                println(urlString)
-                val obj = URL(urlString)
+                println(url)
+                val obj = URL(url)
                 val connection = obj.openConnection() as HttpURLConnection
                 connection.requestMethod = "GET"
 
@@ -35,28 +38,34 @@ class Channel {
                         response.append(inputLine)
                     }
                     responseReader.close()
+                    if (response.length != 0) {
+                        // Instead of returning the response string, return the ChannelOptions object
+                        // Assuming you need to create a new ChannelOptions object here
+                        return ChannelOptions(
+                                channel = response.toString(),
+                                env = options.env,
+                                page = options.page,
+                                limit = options.limit
+                        )
+                    } else {
+                        return null
+                    }
 
-                    return response.toString()
                 } else {
                     println("Failed to fetch channel object. Response code: $responseCode")
                     // You might want to handle other response codes accordingly
-                    return ""
+                    return null
                 }
             } catch (e: Exception) {
                 println("Error while fetching channel object: ${e.message}")
-                return ""
+                return null
             }
         }
-
-        fun getAllChannels(env: ENV, page: Number, limit: Number): String {
-            val url = PushURI.getChannels(page, limit, ENV.staging)
-//            println("$address all address")
-
-            val urlString = "$url"
-
+        fun getAllChannels(options: ChannelOptions): String {
+            val url = PushURI.getChannels(options.page, options.limit, options.env)
             try {
-                println(urlString)
-                val obj = URL(urlString)
+                println(url)
+                val obj = URL(url)
                 val connection = obj.openConnection() as HttpURLConnection
                 connection.requestMethod = "GET"
 

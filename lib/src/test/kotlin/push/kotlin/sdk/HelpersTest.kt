@@ -1,6 +1,6 @@
 package push.kotlin.sdk
-import push.kotlin.sdk.channels.Channel
-import push.kotlin.sdk.channels.Opt
+import org.json.JSONObject
+import push.kotlin.sdk.channels.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -92,15 +92,83 @@ class HelpersTest {
     }
 
     @Test
-    fun GettingChannels(){
-        val options =  Channel.getChannel("0xEDF59F183584107B20e2c95189A4423224bba8F2", ENV.staging, 1, 1)
-        println(options)
+    fun GettingChannel(){
+        val expectedChannel = "0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78"
+        val options = ChannelOptions("0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78", ENV.staging, 1, 1)
+        val res =  Channel.getChannel(options)
+//        println(actualChannel)
+        val jsonObject = JSONObject(res)
+        val actualChannel = jsonObject.getString("channel")
+        println(actualChannel)
+        assertEquals(expectedChannel, actualChannel)
     }
 
     @Test
     fun GettingAllChannels () {
-        val options = Channel.getAllChannels(ENV.staging, 1, 1)
-        println(options)
+//        val res = Channel.getAllChannels(ENV.staging, 1, 10)
+        val options = ChannelOptions("",ENV.staging, 1, 10)
+        val res = Channel.getAllChannels(options)
+        val jsonObject = JSONObject(res)
+        val expectedCount = 10
+        val actualChannels = jsonObject.getJSONArray("channels")
+        println(actualChannels.length())
+        assertEquals(expectedCount, actualChannels.length())
+    }
+
+    @Test
+    fun NonExistingChannels() {
+        val userAddress = "0xcD23560D4F9F816Ffb3D790e5ac3f6A316c559Ea"
+        val options = ChannelOptions(userAddress, ENV.staging, 1, 1)
+        val res =  Channel.getChannel(options)
+        println(res)
+//        assertEquals(expectedChannel, actualChannel)
+    }
+
+    @Test
+    fun SearchChannelByName() {
+        val res = Search.searchChannels(ENV.staging, 1, 10, "desc", "rayan")
+        println(res)
+        val actual = JSONObject(res)
+        val actualCount = actual.getInt("itemcount")
+        val asExpected = actualCount > 0
+        assertEquals(true, asExpected)
+    }
+
+    @Test
+    fun getSubscriberTest() {
+        val res = Subscribe.getSubscribers("0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78", ENV.staging,5, 1)
+        val Data = JSONObject(res)
+        val actual = Data.getJSONArray("subscribers")[0]
+        val expected = "0x02b24ac2239b344fbc4577801f7000901e7a3944"
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun isSubscribed() {
+        val res1 = Subscribe.IsSubscribed("0x5d73D70EB962083eDED53F03e2D4fA7d7773c4CE", "0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78", ENV.staging)
+        val res2 = Subscribe.IsSubscribed("0x361158064636d05198b23389c75ee32fa10b26bd", "0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78", ENV.staging)
+        println("resss $res1")
+        assertEquals(false, res1)
+        assertEquals(true, res2)
+    }
+
+    @Test
+    fun SearchChannelByAddress() {
+        val res = Search.searchChannels(ENV.staging, 1, 10, "desc", "0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78")
+        val jsonObject = JSONObject(res)
+        val actual = jsonObject.getJSONArray("channels")
+
+        if (actual.length() > 0) {
+            val firstChannel = actual.getJSONObject(0)
+            val channelAddress = firstChannel.getString("channel")
+            println(channelAddress)
+            assertEquals("0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78", channelAddress)
+        }
+    }
+
+    @Test
+    fun testNoexistingChannels() {
+
     }
 
     @Test

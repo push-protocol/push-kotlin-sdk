@@ -8,6 +8,13 @@ class Helpers {
             return "eip155:5:${address}"
         }
 
+        fun walletToPCAIP(env: ENV, address: String): String {
+            if (env == ENV.prod) {
+                return "eip155:1:${address}"
+            }
+            return "eip155:5:${address}"
+        }
+
         fun decryptMessage(encryptedSecret: String, messageContent: String, pgpPrivateKey: String): String {
             val AESKey = Pgp.decrypt(encryptedSecret, pgpPrivateKey).getOrThrow()
             val message = AESCBC.decrypt(AESKey.toString(), messageContent)
