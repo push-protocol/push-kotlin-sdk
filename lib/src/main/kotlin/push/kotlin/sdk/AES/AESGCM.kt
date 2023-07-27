@@ -25,8 +25,6 @@ class AESGCM {
     companion object {
         private const val GCM_TAG_LENGTH = 16
 
-
-
         fun hexToBytes(hex: String): ByteArray {
             // We are expecting UnitBytes
             val bytes = mutableListOf<Byte>()
@@ -49,7 +47,6 @@ class AESGCM {
             val remaining = com.drop(3)
             return hexToBytes(remaining)
         }
-
 
 
         fun encrypt(message: String, secret: String, nonceHex: String?=null, saltHex: String?=null): Triple<String,String,String>{

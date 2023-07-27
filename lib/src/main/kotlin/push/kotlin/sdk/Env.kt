@@ -13,6 +13,10 @@ object PushURI {
         return "${getBaseUri(env,"v2")}/users?caip10=eip155:${userAddress}"
     }
 
+    fun createUser(env: ENV):String{
+        return "${getBaseUri(env,"v2")}/users"
+    }
+
     fun getChats(env:ENV, did:String, page:Number=1, limit:Number=10):String{
         return "${getBaseUri(env)}/chat/users/$did/chats?page=$page&limit=$limit"
     }

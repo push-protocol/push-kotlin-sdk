@@ -104,7 +104,7 @@ class Pgp {
     }
 
     public fun generate():Pair<String, String>{
-        val secretKey: PGPSecretKeyRing = PGPainless.generateKeyRing().simpleRsaKeyRing("Juliet <juliet@montague.lit>", RsaLength._2048)
+        val secretKey: PGPSecretKeyRing = PGPainless.generateKeyRing().simpleRsaKeyRing(" ", RsaLength._2048)
 
         val privateKey = ArmorUtils.toAsciiArmoredString(secretKey.encoded)
         val publicKey = ArmorUtils.toAsciiArmoredString(secretKey.getPublicKey().encoded)

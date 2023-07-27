@@ -6,8 +6,7 @@ package push.kotlin.sdk
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-val UserPublicKey = """
------BEGIN PGP PUBLIC KEY BLOCK-----
+val PGP_PUBLIC = """-----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: openpgp-mobile
 
 xsBNBGM0d6MBCACxjqDjA0lpIETCEYjgg5IwnXzm3Kp1ruKiNcsGV5O682ywYhYK
