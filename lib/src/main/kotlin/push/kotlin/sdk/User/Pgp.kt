@@ -1,6 +1,5 @@
 package push.kotlin.sdk
 
-import org.bouncycastle.openpgp.PGPPublicKeyRing
 import org.bouncycastle.openpgp.PGPSecretKeyRing
 import org.bouncycastle.util.io.Streams
 import org.pgpainless.PGPainless
@@ -17,6 +16,7 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 
+
 class CustomException(message: String) : Exception(message) {
     override fun toString(): String {
         return message ?: "Unknown error occurred"
@@ -27,25 +27,38 @@ class CustomException(message: String) : Exception(message) {
 class Pgp {
 
   companion object {
-    public fun encrypt(message: String, userPublicKey: PGPPublicKeyRing): Result<String> {
-        return try {
-            val outputStream = ByteArrayOutputStream()
-            val encryptionStream = PGPainless.encryptAndOrSign()
+    public fun encrypt(message: String, userPublicKeys: List<String>): Result<String> {
+      return try {
+        println("working...")
+        if (userPublicKeys.size < 2){
+          throw IllegalStateException("Public keys should be more than 2")
+        }
+
+
+        val publicKey1 = PGPainless.readKeyRing().publicKeyRing(userPublicKeys[0]) ?: throw IllegalStateException("Public key not found")
+        val publicKey2 = PGPainless.readKeyRing().publicKeyRing(userPublicKeys[1]) ?: throw IllegalStateException("Public key not found")
+
+        println("hello world ah9s")
+
+        val outputStream = ByteArrayOutputStream()
+        val encryptionStream = PGPainless.encryptAndOrSign()
                 .onOutputStream(outputStream)
                 .withOptions(
-                    ProducerOptions.encrypt(
-                        EncryptionOptions().addRecipient(userPublicKey)
-                    ).setAsciiArmor(true)
+                        ProducerOptions.encrypt(
+                                EncryptionOptions()
+                                        .addRecipient(publicKey1)
+                                        .addRecipient(publicKey2)
+                        ).setAsciiArmor(true)
                 )
 
-            val inputStream = ByteArrayInputStream(message.toByteArray())
-            Streams.pipeAll(inputStream, encryptionStream);
-            encryptionStream.close();
+        val inputStream = ByteArrayInputStream(message.toByteArray())
+        Streams.pipeAll(inputStream, encryptionStream);
+        encryptionStream.close();
 
-            Result.success(outputStream.toByteArray().toString(Charsets.UTF_8))
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+        Result.success(outputStream.toByteArray().toString(Charsets.UTF_8))
+      } catch (e: Exception) {
+        Result.failure(e)
+      }
     }
 
     public fun decrypt(encryptedMessage: String, pgpPrivateKey: String): Result<String> {

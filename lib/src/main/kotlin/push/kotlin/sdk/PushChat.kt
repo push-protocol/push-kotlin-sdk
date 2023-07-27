@@ -222,13 +222,12 @@ class PushChat{
       feeds.forEach { feed ->
         val message = PushChat.resolveIpfs(feed.threadhash, env) ?: throw  IllegalStateException("")
 
-        if (toDecrypt && message.encType == "pgp" && feed.chatId == null){
+        if (toDecrypt && message.encType == "pgp"){
           val messageDecrypted = Helpers.decryptMessage(message.encryptedSecret, message.messageContent, pgpPrivateKey)
           message.messageContent = messageDecrypted
         }
 
         feed.msg = message
-
         newFeed += feed
       }
 

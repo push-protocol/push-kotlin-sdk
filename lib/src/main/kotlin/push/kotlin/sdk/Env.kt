@@ -33,6 +33,10 @@ object PushURI {
         return "${getBaseUri(env)}/chat/request"
     }
 
+    fun acceptChatRequest(env: ENV):String{
+        return "${getBaseUri(env)}/chat/request/accept"
+    }
+
     fun getConversationHashReslove(env: ENV,threadHash:String, limit: Number):String{
         return  "${getBaseUri(env)}/chat/conversationhash/$threadHash?fetchLimit=${limit}"
     }
