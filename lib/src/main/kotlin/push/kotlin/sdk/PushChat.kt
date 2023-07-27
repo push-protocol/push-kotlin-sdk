@@ -62,7 +62,7 @@ class PushChat{
 
   companion object{
     public  fun getChats(options:PushChat.GetChatsOptions):Array<Feed>?{
-      val userAddress = Helpers.walletToCAIP(options.account)
+      val userAddress = Helpers.walletToPCAIP(options.account)
 
       val url = PushURI.getChats(options.env,userAddress,options.page,options.limit)
 
@@ -94,7 +94,7 @@ class PushChat{
     }
 
     fun getChatRequests(options:PushChat.GetChatsOptions):Array<Feed>?{
-      val userAddress = Helpers.walletToCAIP(options.account)
+      val userAddress = Helpers.walletToPCAIP(options.account)
 
       val url = PushURI.getChatRequests(options.env,userAddress,options.page,options.limit)
 
@@ -126,8 +126,8 @@ class PushChat{
     }
 
     fun getConversationHash(conversationId:String, account: String, env:ENV):String?{
-      val userAddress = Helpers.walletToCAIP(account)
-      val _conversationId = Helpers.walletToCAIP(conversationId)
+      val userAddress = Helpers.walletToPCAIP(account)
+      val _conversationId = Helpers.walletToPCAIP(conversationId)
 
       val url = PushURI.getConversationHaash(env,userAddress, _conversationId)
 

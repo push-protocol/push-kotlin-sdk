@@ -47,7 +47,9 @@ class PushChatTest {
         val feeds = PushChat.getChatRequests(feedOptions) ?: throw  IllegalStateException("")
         assertEquals(feeds.count(), 10)
 
-        feeds.forEach { feed -> println("${feed.chatId} ${feed.msg.encType}")  }
+        feeds.forEach { feed ->
+            assert(feed.msg.messageContent.isNotEmpty())
+        }
     }
     @Test fun chatRequestTestDecrypt() {
         val feedOptions = PushChat.GetChatsOptions(
@@ -72,9 +74,7 @@ class PushChatTest {
     @Test fun latestMessageTest() {
         val hash = PushChat.getConversationHash("0x03fAD591aEb926bFD95FE1E38D51811167a5ad5c","0xD26A7BF7fa0f8F1f3f73B056c9A67565A6aFE63c", ENV.staging) ?: throw IllegalStateException()
         val message = PushChat.getLatestMessage(hash, PGP_PK, ENV.staging)
-
         assert(message.messageContent.isNotEmpty())
-        println(message)
     }
 
     @Test fun conversationHistoryTest() {
@@ -88,6 +88,6 @@ class PushChatTest {
         val hash = PushChat.getConversationHash("0x03fAD591aEb926bFD95FE1E38D51811167a5ad5c","0xD26A7BF7fa0f8F1f3f73B056c9A67565A6aFE63c", ENV.staging) ?: throw IllegalStateException()
         val messages = PushChat.getConversationHistory(hash, 5, PGP_PK, true, ENV.staging)
 
-        messages.forEach { message -> println(message.messageContent) }
+        messages.forEach { message -> assert(message.messageContent.isNotEmpty()) }
     }
 }
