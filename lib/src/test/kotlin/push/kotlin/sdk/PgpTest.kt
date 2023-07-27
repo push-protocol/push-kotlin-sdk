@@ -6,6 +6,9 @@ package push.kotlin.sdk
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+
+val PGP_LINKED_ADDRESS = "0xD26A7BF7fa0f8F1f3f73B056c9A67565A6aFE63c"
+
 val PGP_PUBLIC = """-----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: openpgp-mobile
 

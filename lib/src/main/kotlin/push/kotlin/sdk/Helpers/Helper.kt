@@ -9,6 +9,9 @@ class Helpers {
         }
 
         fun walletToPCAIP(address: String): String {
+            if(address.contains("eip155:")){
+                return address
+            }
             return "eip155:${address}"
         }
 

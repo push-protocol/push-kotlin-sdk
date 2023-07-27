@@ -95,7 +95,9 @@ class Pgp {
 
         val signingKey = PGPainless.inspectKeyRing(secretKey).signingSubkeys[0]
         val signature = result.detachedSignatures[SubkeyIdentifier(secretKey, signingKey.keyID)].iterator().next()
-        val detachedSignature = ArmorUtils.toAsciiArmoredString(signature.encoded)
+
+        var detachedSignature = ArmorUtils.toAsciiArmoredString(signature.encoded)
+        detachedSignature = detachedSignature.replace("Version: PGPainless\n","")
 
         return Result.success(detachedSignature)
       }catch (e:Exception){

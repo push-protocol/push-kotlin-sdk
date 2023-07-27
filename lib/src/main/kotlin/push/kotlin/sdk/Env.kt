@@ -10,7 +10,7 @@ object PushURI {
     }
 
     fun getUser(env:ENV, userAddress:String):String{
-        return "${getBaseUri(env,"v2")}/users?caip10=eip155:${userAddress}"
+        return "${getBaseUri(env,"v2")}/users?caip10=${userAddress}"
     }
 
     fun createUser(env: ENV):String{
@@ -27,6 +27,10 @@ object PushURI {
 
     fun getConversationHaash(env:ENV, account:String, converationId:String):String{
         return "${getBaseUri(env)}/chat/users/$account/conversations/$converationId/hash"
+    }
+
+    fun sendChatIntent(env:ENV):String{
+        return "${getBaseUri(env)}/chat/request"
     }
 
     fun getConversationHashReslove(env: ENV,threadHash:String, limit: Number):String{

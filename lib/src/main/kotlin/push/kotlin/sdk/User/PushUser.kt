@@ -16,16 +16,26 @@ class PushUser {
             val blockedUsersList:Array<String>?,
     )
 
+    data class UserPgpPublicKey(val key: String, val signature: String)
+
     data class UserProfile(
-            val did: String,
-            val wallets: String,
-            val pubicKey: String,
-            val encryptedPrivateKey: String,
-            val verificationProof: String,
-            val msgSent: Number,
-            val maxMsgPersisted:Number,
-            val profile: PushUser.ProfileInfo
-    )
+        val did: String,
+        val wallets: String,
+        val publicKey: String,
+        val encryptedPrivateKey: String,
+        val verificationProof: String,
+        val msgSent: Number,
+        val maxMsgPersisted:Number,
+        val profile: PushUser.ProfileInfo
+    ){
+       fun getUserPublicKey():String{
+           return try {
+               Gson().fromJson(publicKey, UserPgpPublicKey::class.java).key
+           }catch(e:Exception){
+               publicKey
+           }
+       }
+    }
 
     data class EncryptedPrivateKey(
         val ciphertext: String,
@@ -58,7 +68,7 @@ class PushUser {
         }
 
         public  fun getUser(userAddress:String, env: ENV): PushUser.UserProfile?{
-            val url =  PushURI.getUser(env, userAddress)
+            val url =  PushURI.getUser(env, Helpers.walletToPCAIP(userAddress))
 
             // Create an OkHttpClient instance
             val client = OkHttpClient()
