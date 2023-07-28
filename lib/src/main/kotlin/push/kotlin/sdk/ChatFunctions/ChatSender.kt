@@ -124,12 +124,28 @@ data class ChatSender(val sendOptions:SendOptions){
     return Result.success(Triple(ciphertext, encryptedAES, sign))
   }
 
+  fun send():Result<PushChat.Message>{
+    val threadHash = PushChat.getConversationHash(sendOptions.receiverAddress, sendOptions.senderAddress, ENV.staging)
+
+    return if(threadHash == null){
+      sendIntent()
+    }else{
+      sendChat()
+    }
+  }
+
+  fun sendChat():Result<PushChat.Message>{
+    val publicKeys = getP2PChatPublicKeys(sendOptions).getOrElse { exception -> return Result.failure(exception)  }
+    val sendMessagePayload = getSendMessagePayload(sendOptions, publicKeys).getOrElse { exception -> return  Result.failure(exception) }
+    return sendService(sendMessagePayload, sendOptions.env, isRequest = false)
+  }
+
   fun sendIntent():Result<PushChat.Message>{
     val publicKeys = getP2PChatPublicKeys(sendOptions).getOrElse { exception -> return Result.failure(exception)  }
 
     val sendMessagePayload = getSendMessagePayload(sendOptions, publicKeys).getOrElse { exception -> return  Result.failure(exception) }
 
-    return sendIntentService(sendMessagePayload, sendOptions.env)
+    return sendService(sendMessagePayload, sendOptions.env, isRequest = true)
   }
 
   fun getSendMessagePayload(sendOptions: SendOptions, publicKeys:List<String>):Result<SendMessagePayload>{
@@ -174,8 +190,8 @@ data class ChatSender(val sendOptions:SendOptions){
     return Result.success(payload)
   }
 
-  fun sendIntentService(payload: SendMessagePayload, env: ENV):Result<PushChat.Message>{
-    val url = PushURI.sendChatIntent(env)
+  fun sendService(payload: SendMessagePayload,env: ENV, isRequest:Boolean=false):Result<PushChat.Message>{
+    val url = if(isRequest) {PushURI.sendChatIntent(env)} else {PushURI.sendChatMessage(env)}
 
     val mediaType = "application/json; charset=utf-8".toMediaType()
     val body = Gson().toJson(payload).toRequestBody(mediaType)

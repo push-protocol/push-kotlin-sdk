@@ -8,6 +8,7 @@ fun getRandomEthPrivateKey(): String {
 }
 fun getNewSinger():Pair<String, Signer>{
   val privateKey = getRandomEthPrivateKey()
+  println("pk $privateKey")
   val signer = PrivateKeySigner(privateKey)
   val address = signer.getAddress().getOrThrow()
 

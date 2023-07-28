@@ -33,6 +33,10 @@ object PushURI {
         return "${getBaseUri(env)}/chat/request"
     }
 
+    fun sendChatMessage(env:ENV):String{
+        return "${getBaseUri(env)}/chat/message"
+    }
+
     fun acceptChatRequest(env: ENV):String{
         return "${getBaseUri(env)}/chat/request/accept"
     }

@@ -9,11 +9,11 @@ import push.kotlin.sdk.ProfileCreator.ProfileCreator
 class PushUser {
 
     data class ProfileInfo(
-            val verificationProof: String?,
-            val picture:String?,
-            val name:String?,
-            val desc:String?,
-            val blockedUsersList:Array<String>?,
+        val verificationProof: String?,
+        val picture:String?,
+        val name:String?,
+        val desc:String?,
+        val blockedUsersList:Array<String>?,
     )
 
     data class UserPgpPublicKey(val key: String, val signature: String)
