@@ -34,7 +34,6 @@ class PushChatSendTest {
   @Test
   fun sendEncryptedIntentTest(){
     val (newAddress, signer) = getNewSinger()
-
     val newUser = PushUser.createUser(signer, ENV.staging).getOrThrow()
     val pgpPK = DecryptPgp.decryptPgpKey(newUser.encryptedPrivateKey, signer).getOrThrow()
 

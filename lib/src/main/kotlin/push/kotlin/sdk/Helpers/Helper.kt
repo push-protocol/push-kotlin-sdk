@@ -1,6 +1,7 @@
 package push.kotlin.sdk
 
 import org.web3j.crypto.WalletUtils
+import push.kotlin.sdk.Group.IsGroupChatId
 
 class Helpers {
     companion object {
@@ -9,10 +10,18 @@ class Helpers {
         }
 
         fun walletToPCAIP(address: String): String {
+            if(IsGroupChatId(address)){
+                return  address
+            }
+
             if(address.contains("eip155:")){
                 return address
             }
             return "eip155:${address}"
+        }
+
+        fun walletsToPCAIP(addresses: List<String>): List<String> {
+            return addresses.map { el -> Helpers.walletToPCAIP(el) }
         }
 
         fun decryptMessage(encryptedSecret: String, messageContent: String, pgpPrivateKey: String): String {
@@ -45,6 +54,9 @@ class Helpers {
         }
 
         fun isValidAddress(address: String): Boolean {
+            if(address.contains("eip155:")){
+                return  WalletUtils.isValidAddress(address.split(":")[1])
+            }
             return WalletUtils.isValidAddress(address)
         }
 

@@ -45,6 +45,14 @@ object PushURI {
         return  "${getBaseUri(env)}/chat/conversationhash/$threadHash?fetchLimit=${limit}"
     }
 
+    fun createChatGroup(env:ENV):String{
+        return "${getBaseUri(env)}/chat/groups"
+    }
+
+    fun getGroup(chatId:String, env:ENV):String{
+        return "${getBaseUri(env)}/chat/groups/$chatId"
+    }
+
     fun OptInChannel(env: ENV, channel: String): String {
         return "${getBaseUri(env)}/channels/$channel/subscribe"
     }

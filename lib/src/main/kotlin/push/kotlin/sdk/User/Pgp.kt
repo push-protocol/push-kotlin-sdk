@@ -27,28 +27,32 @@ class CustomException(message: String) : Exception(message) {
 class Pgp {
 
   companion object {
+    fun getEcryptionOptions(userPublicKeys: List<String>):Result<EncryptionOptions>{
+      val ecryptionOptions = EncryptionOptions()
+
+      userPublicKeys.forEach { el ->
+        val publicKey = PGPainless.readKeyRing().publicKeyRing(el) ?: return  Result.failure(IllegalStateException("Public key not found"))
+        ecryptionOptions.addRecipient(publicKey)
+      }
+
+      return  Result.success(ecryptionOptions)
+    }
+
     public fun encrypt(message: String, userPublicKeys: List<String>): Result<String> {
       return try {
-        println("working...")
-        if (userPublicKeys.size < 2){
-          throw IllegalStateException("Public keys should be more than 2")
+        if (userPublicKeys.isEmpty()){
+          throw IllegalStateException("Public keys should not be empty")
         }
 
-
-        val publicKey1 = PGPainless.readKeyRing().publicKeyRing(userPublicKeys[0]) ?: throw IllegalStateException("Public key not found")
-        val publicKey2 = PGPainless.readKeyRing().publicKeyRing(userPublicKeys[1]) ?: throw IllegalStateException("Public key not found")
-
-        println("hello world ah9s")
+        val decryptionOptions = getEcryptionOptions(userPublicKeys).getOrElse { exception -> return Result.failure(exception) }
 
         val outputStream = ByteArrayOutputStream()
         val encryptionStream = PGPainless.encryptAndOrSign()
                 .onOutputStream(outputStream)
                 .withOptions(
-                        ProducerOptions.encrypt(
-                                EncryptionOptions()
-                                        .addRecipient(publicKey1)
-                                        .addRecipient(publicKey2)
-                        ).setAsciiArmor(true)
+                    ProducerOptions.encrypt(
+                       decryptionOptions
+                    ).setAsciiArmor(true)
                 )
 
         val inputStream = ByteArrayInputStream(message.toByteArray())
