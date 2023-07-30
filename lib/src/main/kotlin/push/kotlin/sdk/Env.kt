@@ -10,7 +10,11 @@ object PushURI {
     }
 
     fun getUser(env:ENV, userAddress:String):String{
-        return "${getBaseUri(env,"v2")}/users?caip10=${userAddress}"
+        return "${getBaseUri(env,"v2")}/users/?caip10=${Helpers.walletToPCAIP(userAddress)}"
+    }
+
+    fun updateUser(env:ENV,userAddress: String):String{
+        return "${getBaseUri(env,"v2")}/users/${Helpers.walletToPCAIP(userAddress)}/profile"
     }
 
     fun createUser(env: ENV):String{
@@ -50,6 +54,10 @@ object PushURI {
     }
 
     fun getGroup(chatId:String, env:ENV):String{
+        return "${getBaseUri(env)}/chat/groups/$chatId"
+    }
+
+    fun updatedChatGroup(chatId:String, env:ENV):String{
         return "${getBaseUri(env)}/chat/groups/$chatId"
     }
 

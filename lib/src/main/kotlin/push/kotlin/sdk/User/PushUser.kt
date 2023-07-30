@@ -5,15 +5,17 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import push.kotlin.sdk.JsonHelpers.GetJsonStringFromKV
 import push.kotlin.sdk.ProfileCreator.ProfileCreator
+import push.kotlin.sdk.ProfileCreator.ProfileUpdater
+import push.kotlin.sdk.ProfileCreator.UserProfileBlock
 
 class PushUser {
 
     data class ProfileInfo(
-        val verificationProof: String?,
-        val picture:String?,
-        val name:String?,
-        val desc:String?,
-        val blockedUsersList:Array<String>?,
+        var verificationProof: String?,
+        var picture:String?,
+        var name:String?,
+        var desc:String?,
+        var blockedUsersList:List<String>?,
     )
 
     data class UserPgpPublicKey(val key: String, val signature: String)
@@ -65,6 +67,18 @@ class PushUser {
     companion object{
         public fun createUser(signer: Signer, env:ENV):Result<PushUser.UserProfile>{
             return ProfileCreator(signer,env).createUserProfile()
+        }
+
+        public fun updateUser(userAddress:String, userProfile: PushUser.ProfileInfo, userPgpPrivateKey:String, env: ENV):Result<Boolean>{
+            return ProfileUpdater(userAddress, userProfile, userPgpPrivateKey, env).updateUserProfile()
+        }
+
+        public fun blockUser(userAddress: String, userPgpPrivateKey: String, addressToBlock:List<String>,env: ENV):Result<Boolean>{
+            return UserProfileBlock(userAddress, userPgpPrivateKey, addressToBlock, env).block()
+        }
+
+        public fun unblockUser(userAddress: String, userPgpPrivateKey: String, addressToUnBlock:List<String>,env: ENV):Result<Boolean>{
+            return UserProfileBlock(userAddress, userPgpPrivateKey, addressToUnBlock, env).unblock()
         }
 
         public  fun getUser(userAddress:String, env: ENV): PushUser.UserProfile?{

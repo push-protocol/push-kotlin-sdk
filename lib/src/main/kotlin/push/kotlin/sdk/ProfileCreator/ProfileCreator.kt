@@ -2,13 +2,16 @@ package push.kotlin.sdk.ProfileCreator
 
 import AESGCM
 import com.google.gson.Gson
+import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import push.kotlin.sdk.*
 import push.kotlin.sdk.HahHelper.GenerateSHA256Hash
+import push.kotlin.sdk.JsonHelpers.GetJsonStringFromGenericKV
 import push.kotlin.sdk.JsonHelpers.GetJsonStringFromKV
+import push.kotlin.sdk.JsonHelpers.ListToJsonString
 import java.security.SecureRandom
 
 
@@ -20,6 +23,113 @@ fun ByteArray.toHexString(): String {
   return hexString.toString()
 }
 
+data class UserProfileBlock(val userAddress: String, val userPgpPrivateKey: String, val addresses:List<String>, val env: ENV,){
+  public fun block():Result<Boolean>{
+    val _addresses = addresses.map { el -> Helpers.walletToPCAIP(el) }
+
+    val user = PushUser.getUser(userAddress, env) ?: return Result.failure(IllegalStateException("User $userAddress not found"))
+    val userProfile = user.profile
+
+    if(userProfile.blockedUsersList == null){
+      userProfile.blockedUsersList = _addresses
+    }else{
+      val _lists:MutableList<String> = userProfile.blockedUsersList!!.toMutableList()
+      _addresses.forEach { el ->
+        if (!userProfile.blockedUsersList!!.contains(Helpers.walletToPCAIP(el))){
+          _lists += el
+        }
+      }
+
+      userProfile.blockedUsersList = _lists
+    }
+
+    return ProfileUpdater(userAddress, userProfile, userPgpPrivateKey, env).updateUserProfile()
+  }
+
+  public fun unblock():Result<Boolean>{
+    val user = PushUser.getUser(userAddress, env) ?: return Result.failure(IllegalStateException("User $userAddress not found"))
+    val userProfile = user.profile
+
+    val _addressToBlock: MutableList<String> = mutableListOf()
+    val addressAlreadyBlock: List<String> =
+            userProfile.blockedUsersList ?: emptyList()
+    val _addressesToUnblock = Helpers.walletsToPCAIP(addresses)
+
+    for (addrs in addressAlreadyBlock) {
+      if (!_addressesToUnblock.contains(addrs)) {
+        _addressToBlock.add(addrs)
+      }
+    }
+
+    userProfile.blockedUsersList = _addressToBlock
+
+    return ProfileUpdater(userAddress, userProfile, userPgpPrivateKey, env).updateUserProfile()
+  }
+}
+
+
+class ProfileUpdater(val userAddress: String, val userProfile: PushUser.ProfileInfo, val userPgpPrivateKey:String, val env: ENV){
+  public fun updateUserProfile():Result<Boolean>{
+    val hash = getUpdatedProfileHash(userProfile)
+    val sig = Pgp.sign(userPgpPrivateKey, hash).getOrElse { exception -> return Result.failure(exception) }
+    val sigType = "pgpv2"
+    val verificationProof = "$sigType:$sig"
+
+    val payload = getUpdateUserPayload(userProfile, verificationProof)
+    return updateUserService(payload, userAddress, env)
+  }
+
+  data class UpdateUserPayload(val name:String, val desc:String, val picture:String, val blockedUsersList:List<String>, val verificationProof:String)
+
+  companion object{
+    fun getUpdatedProfileHash(updatedUser:PushUser.ProfileInfo):String{
+      var profileJsonString = GetJsonStringFromGenericKV(listOf(
+        Pair("name", JsonPrimitive(updatedUser.name ?: " ")),
+        Pair("desc", JsonPrimitive(updatedUser.desc ?: " ")),
+        Pair("picture", JsonPrimitive(updatedUser.picture ?: " ")),
+        "blockedUsersList" to JsonPrimitive("--members--replace"),
+      ))
+
+      val members:List<String> = updatedUser.blockedUsersList ?: listOf<String>();
+
+      profileJsonString = profileJsonString.replace("--members--replace", ListToJsonString(members ?: listOf()))
+      profileJsonString = profileJsonString.replace("\"[","[")
+      profileJsonString = profileJsonString.replace("]\"","]")
+
+      return GenerateSHA256Hash(profileJsonString)
+    }
+
+    fun getUpdateUserPayload(updatedUser: PushUser.ProfileInfo, verificationProof: String):UpdateUserPayload{
+      return UpdateUserPayload(
+        name = updatedUser.name ?: " ",
+        desc = updatedUser.desc ?: " ",
+        picture = updatedUser.picture ?: " ",
+        blockedUsersList = updatedUser.blockedUsersList ?: listOf(),
+        verificationProof = verificationProof
+      )
+    }
+
+    fun updateUserService(payload:UpdateUserPayload, userAddress:String, env: ENV):Result<Boolean>{
+      try {
+        val url = PushURI.updateUser(env, userAddress)
+        val mediaType = "application/json; charset=utf-8".toMediaType()
+        val body = Gson().toJson(payload).toRequestBody(mediaType)
+
+        val client = OkHttpClient()
+        val request = Request.Builder().url(url).put(body).build()
+        val response = client.newCall(request).execute()
+
+        if(response.isSuccessful){
+          return Result.success(true)
+        }
+
+        return Result.failure(IllegalStateException(response.message))
+      }catch (e:Exception){
+        return Result.failure(IllegalStateException(e))
+      }
+    }
+  }
+}
 
 class ProfileCreator(val signer:Signer, val env:ENV) {
   public  fun createUserProfile():Result<PushUser.UserProfile>{
@@ -40,6 +150,7 @@ class ProfileCreator(val signer:Signer, val env:ENV) {
       return  Result.failure(e)
     }
   }
+
   companion object {
     fun createUserEmpty(userAddress: String, env:ENV):Result<PushUser.UserProfile>{
       val caip10 = Helpers.walletToPCAIP(userAddress)

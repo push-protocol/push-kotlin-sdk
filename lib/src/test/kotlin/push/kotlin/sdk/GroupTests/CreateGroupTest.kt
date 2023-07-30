@@ -47,14 +47,14 @@ class CreateGroupTest {
     val (member2,_) = getNewSinger()
 
     val createOptions = PushGroup.CreateGroupOptions(
-            name = "$newAddress group",
-            description = "group made my the user $newAddress for testing",
-            image = BASE_64_IMAGE,
-            members = mutableListOf(member1,member2),
-            creatorAddress = newAddress,
-            isPublic = false,
-            creatorPgpPrivateKey = pgpPK,
-            env = ENV.staging
+      name = "$newAddress group",
+      description = "group made my the user $newAddress for testing",
+      image = BASE_64_IMAGE,
+      members = mutableListOf(member1,member2),
+      creatorAddress = newAddress,
+      isPublic = false,
+      creatorPgpPrivateKey = pgpPK,
+      env = ENV.staging
     )
 
     val group = PushGroup.createGroup(createOptions).getOrThrow()
