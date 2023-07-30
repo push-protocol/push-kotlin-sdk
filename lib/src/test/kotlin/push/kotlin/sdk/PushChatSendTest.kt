@@ -26,7 +26,7 @@ class PushChatSendTest {
     assert(res.isSuccess)
 
     val requests = PushChat.getChatRequests(PushChat.GetChatsOptions(newAddress, "",false, 1, 10, ENV.staging)) ?: throw IllegalStateException()
-    val msg = requests[0].msg.messageContent
+    val msg = requests[0].msg!!.messageContent
 
     assertEquals(msg, "Hello user $newAddress")
   }
@@ -59,7 +59,7 @@ class PushChatSendTest {
       ENV.staging
     )) ?: throw IllegalStateException("")
 
-    val msg = requests[0].msg.messageContent
+    val msg = requests[0].msg!!.messageContent
     assertEquals(msg, "Hello user $newAddress")
   }
 
@@ -140,7 +140,7 @@ class PushChatSendTest {
             10,
             ENV.staging
     )) ?: throw IllegalStateException("")
-    val receiverMessage = receiverChats[0].msg.messageContent
+    val receiverMessage = receiverChats[0].msg!!.messageContent
 
     val latestHash = PushChat.getConversationHash(newAddress, PGP_LINKED_ADDRESS, ENV.staging) ?: throw IllegalStateException("")
     val senderChats = PushChat.getConversationHistory(latestHash,10, PGP_PK, true, ENV.staging)

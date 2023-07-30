@@ -21,14 +21,14 @@ class PushChat{
   )
 
   data class Feed(
-    var msg: Message,
+    var msg: Message?,
     var did: String?,
     var wallets: String?,
     var profilePicture: String?,
     var publicKey: String?,
     var about: String?,
     var name: String?,
-    var threadhash: String,
+    var threadhash: String?,
     var intent: String?,
     var intentSentBy: String?,
     var intentTimestamp: String?,
@@ -61,7 +61,7 @@ class PushChat{
   )
 
   companion object{
-    public  fun getChats(options:PushChat.GetChatsOptions):Array<Feed>?{
+    public  fun getChats(options:PushChat.GetChatsOptions):Array<Feed>{
       val userAddress = Helpers.walletToPCAIP(options.account)
 
       val url = PushURI.getChats(options.env,userAddress,options.page,options.limit)
@@ -82,7 +82,6 @@ class PushChat{
         var feeds = gson.fromJson(jsonResponse, PushChat.Feeds::class.java).chats
 
         feeds = getFeedsMsg(feeds, options.pgpPrivateKey,options.toDecrypt,options.env)
-
         return feeds
       } else {
         println("Error: ${response.code} ${response.message}")
@@ -90,7 +89,7 @@ class PushChat{
 
       // Close the response body
       response.close()
-      return null
+      return emptyArray()
     }
 
     fun getChatRequests(options:PushChat.GetChatsOptions):Array<Feed>?{
@@ -202,11 +201,14 @@ class PushChat{
     private fun getFeedsMsg(feeds:Array<Feed>, pgpPrivateKey: String, toDecrypt: Boolean, env: ENV):Array<Feed>{
       var newFeed =  arrayOf<Feed>()
       feeds.forEach { feed ->
-        val message = PushChat.resolveIpfs(feed.threadhash, env) ?: throw  IllegalStateException("")
 
-        if (toDecrypt && message.encType == "pgp"){
-          val messageDecrypted = Helpers.decryptMessage(message.encryptedSecret, message.messageContent, pgpPrivateKey)
-          message.messageContent = messageDecrypted
+        val message = PushChat.resolveIpfs(feed.threadhash, env)
+
+        if(message != null){
+          if (toDecrypt && message.encType == "pgp"){
+            val messageDecrypted = Helpers.decryptMessage(message.encryptedSecret, message.messageContent, pgpPrivateKey)
+            message.messageContent = messageDecrypted
+          }
         }
 
         feed.msg = message
@@ -220,11 +222,13 @@ class PushChat{
     private fun getReqestsMsg(feeds:Array<Feed>, pgpPrivateKey: String, toDecrypt: Boolean, env: ENV):Array<Feed>{
       var newFeed =  arrayOf<Feed>()
       feeds.forEach { feed ->
-        val message = PushChat.resolveIpfs(feed.threadhash, env) ?: throw  IllegalStateException("")
+        val message = PushChat.resolveIpfs(feed.threadhash, env)
 
-        if (toDecrypt && message.encType == "pgp"){
-          val messageDecrypted = Helpers.decryptMessage(message.encryptedSecret, message.messageContent, pgpPrivateKey)
-          message.messageContent = messageDecrypted
+        if (message!=null) {
+          if (toDecrypt && message.encType == "pgp") {
+            val messageDecrypted = Helpers.decryptMessage(message.encryptedSecret, message.messageContent, pgpPrivateKey)
+            message.messageContent = messageDecrypted
+          }
         }
 
         feed.msg = message
@@ -234,7 +238,11 @@ class PushChat{
       return newFeed
     }
 
-    public fun resolveIpfs(cid:String, env:ENV):PushChat.Message? {
+    public fun resolveIpfs(cid:String?, env:ENV):PushChat.Message? {
+      if(cid == null){
+        return null
+      }
+
       val url =  PushURI.getCID(env, cid)
 
       // Create an OkHttpClient instance
