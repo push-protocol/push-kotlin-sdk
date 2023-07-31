@@ -41,7 +41,6 @@ dependencies {
     implementation("com.google.crypto.tink:tink-android:1.2.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
     implementation("ch.qos.logback:logback-classic:1.2.5")
-    implementation("org.json:json:20210307")
     api("com.google.protobuf:protobuf-kotlin-lite:3.22.3")
 
 
