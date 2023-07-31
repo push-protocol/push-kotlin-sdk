@@ -5,9 +5,12 @@ import push.kotlin.sdk.Group.IsGroupChatId
 
 class Helpers {
     companion object {
-        fun walletToCAIP(address: String): String {
+
+        fun walletToCAIP(env: ENV, address: String): String {
+            if (env == ENV.prod) {
+                return "eip155:1:${address}"
+            }
             return "eip155:5:${address}"
-        }
 
         fun walletToPCAIP(address: String): String {
             if(IsGroupChatId(address)){
@@ -29,10 +32,6 @@ class Helpers {
             val message = AESCBC.decrypt(AESKey, messageContent)
             return message
         }
-
-//        fun isEthAddressValid(address: String): Boolean {
-//            return WalletUtils.isValidAddress(address)
-//        }
 
         fun islengthValid(data: String, upperLen: Int? = null, lowerLen: Int = 1): Boolean {
             val upper = upperLen ?: Int.MAX_VALUE
