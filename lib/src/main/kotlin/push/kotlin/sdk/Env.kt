@@ -29,6 +29,29 @@ object PushURI {
         return  "${getBaseUri(env)}/chat/conversationhash/$threadHash?fetchLimit=${limit}"
     }
 
+    fun OptInChannel(env: ENV, channel: String): String {
+        return "${getBaseUri(env)}/channels/$channel/subscribe"
+    }
+
+    fun getChannels(page: Number, limit: Number,env: ENV): String {
+        return "${getBaseUri(env)}/channels?page=${page}&limit=${limit}"
+    }
+
+    fun getChannel(env: ENV, channel: String): String {
+        return "${getBaseUri(env)}/channels/${channel}"
+    }
+
+    fun searchChannels(env: ENV, page: Number, limit: Number, order: String, query: String): String {
+        return "${getBaseUri(env)}/channels/search?page=${page}&limit=${limit}&order=${order}&query=${query}"
+    }
+
+    fun getSubscribers(channel: String, page: Number, limit: Number, env: ENV): String {
+        return "${getBaseUri(env)}/channels/${channel}/subscribers?&page=${page}&limit=${limit}"
+    }
+
+    fun isUserSubscribed(env: ENV): String {
+        return "https://backend-staging.epns.io/apis/channels/_is_user_subscribed"
+    }
 
     fun getBaseUri(env: ENV, version:String="v1"):String {
 
