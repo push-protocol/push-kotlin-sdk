@@ -117,14 +117,14 @@ class HelpersTest {
 
     @Test
     fun SearchChannelByName() {
-        val res = Search.searchChannels(ENV.staging, 1, 10, "desc", "rayan").getOrThrow()
+        val res = Search.searchChannels(ENV.staging, 1, 10, "rayan").getOrThrow()
         val actual = res.itemcount
         assertEquals(true, actual > 1)
     }
 
     @Test
     fun SearchChannelByAddress() {
-        val res = Search.searchChannels(ENV.staging, 1, 10, "desc", "0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78").getOrThrow()
+        val res = Search.searchChannels(ENV.staging, 1, 10, "0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78").getOrThrow()
         val jsonObject = res.channels[0]
         val actual = jsonObject.channel
         assertEquals("0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78", actual)
@@ -132,7 +132,7 @@ class HelpersTest {
 
     @Test
     fun testNoexistingChannelsOnSearch() {
-        val res = Search.searchChannels(ENV.staging, 1, 10, "desc", "rayansdsdsdsd").getOrThrow()
+        val res = Search.searchChannels(ENV.staging, 1, 10, "rayansdsdsdsd").getOrThrow()
         println(res)
         val asExpected = 0
         assertEquals(asExpected, res.itemcount)

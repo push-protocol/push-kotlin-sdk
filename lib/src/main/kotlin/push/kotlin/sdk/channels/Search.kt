@@ -13,8 +13,8 @@ import java.net.URL
 
 class Search {
     companion object {
-        fun searchChannels(env: ENV, page: Number, limit: Number, order: String, query: String): Result<AllChannelOptions> {
-            val url = PushURI.searchChannels(env, page, limit, order, query)
+        fun searchChannels(env: ENV, page: Number, limit: Number, query: String): Result<AllChannelOptions> {
+            val url = PushURI.searchChannels(env, page, limit, query)
             val obj = URL(url)
 
             val client = OkHttpClient()

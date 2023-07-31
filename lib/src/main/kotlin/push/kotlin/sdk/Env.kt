@@ -41,8 +41,8 @@ object PushURI {
         return "${getBaseUri(env)}/channels/${channel}"
     }
 
-    fun searchChannels(env: ENV, page: Number, limit: Number, order: String, query: String): String {
-        return "${getBaseUri(env)}/channels/search?page=${page}&limit=${limit}&order=${order}&query=${query}"
+    fun searchChannels(env: ENV, page: Number, limit: Number, query: String): String {
+        return "${getBaseUri(env)}/channels/search?page=${page}&limit=${limit}&order=desc&query=${query}"
     }
 
     fun getSubscribers(channel: String, page: Number, limit: Number, env: ENV): String {
