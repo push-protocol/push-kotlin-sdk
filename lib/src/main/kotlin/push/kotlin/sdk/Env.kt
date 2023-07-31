@@ -65,6 +65,10 @@ object PushURI {
         return "${getBaseUri(env)}/channels/$channel/subscribe"
     }
 
+    fun OptOutChannel(env: ENV, channel: String): String {
+        return "${getBaseUri(env)}/channels/$channel/unsubscribe"
+    }
+
     fun getChannels(page: Number, limit: Number,env: ENV): String {
         return "${getBaseUri(env)}/channels?page=${page}&limit=${limit}"
     }

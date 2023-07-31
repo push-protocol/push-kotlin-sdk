@@ -7,26 +7,24 @@ import push.kotlin.sdk.ENV
 import push.kotlin.sdk.PushURI
 import java.net.URL
 
-//data class SearchedChannels(
-//        val channels
-//)
 
-class Search {
+class ChannelSearch {
     companion object {
-        fun searchChannels(env: ENV, page: Number, limit: Number, order: String, query: String): Result<AllChannelOptions> {
+        fun searchChannels(query: String,page: Number, limit: Number, order: String,env: ENV): Result<PushChannels> {
             val url = PushURI.searchChannels(env, page, limit, order, query)
             val obj = URL(url)
 
             val client = OkHttpClient()
             val request = Request.Builder().url(obj).build()
             val response = client.newCall(request).execute()
-            if(response.isSuccessful) {
+
+            return if(response.isSuccessful) {
                 val jsonResponse = response.body?.string()
                 val gson = Gson()
-                val apiResponse = gson.fromJson(jsonResponse, AllChannelOptions::class.java)
-                return Result.success(apiResponse)
+                val apiResponse = gson.fromJson(jsonResponse, PushChannels::class.java)
+                Result.success(apiResponse)
             } else {
-                return Result.failure(IllegalStateException("Error ${response.code} ${response.message}"))
+                Result.failure(IllegalStateException("Error ${response.code} ${response.message}"))
             }
         }
     }

@@ -9,7 +9,7 @@ import push.kotlin.sdk.PushURI
 import java.net.URL
 import java.util.*
 
-data class ChannelOptions(
+data class PushChannel(
         val id: Int?,
         val channel: String?,
         val ipfshash: String?,
@@ -33,47 +33,44 @@ data class ChannelOptions(
         val channel_settings: String?,
         val subscriber_count: Int?
 )
-//class ChannelsArray {
-    data class AllChannelOptions (
+    data class PushChannels (
             val itemcount: Int,
-            val channels: List<ChannelOptions>,
+            val channels: List<PushChannel>,
     )
 
-//}
 class Channel {
     companion object {
-        fun getChannel(channel: String, env: ENV): Result<ChannelOptions> {
-            val channelCAIP = Helpers.walletToPCAIP(env, channel)
+        fun getChannel(channel: String, env: ENV): PushChannel? {
+            val channelCAIP = Helpers.walletToCAIP(env, channel)
             val url = PushURI.getChannel(env, channelCAIP)
-                println(url)
                 val obj = URL(url)
                 val client = OkHttpClient()
                 val request = Request.Builder().url(obj).get().build()
                 val response = client.newCall(request).execute()
-                if (response.isSuccessful) {
-                    val jsonResponse = response.body?.string()
-                    val gson = Gson()
-                    println(jsonResponse)
-                    val apiResponse = gson.fromJson(jsonResponse, ChannelOptions::class.java)
-                    return Result.success(apiResponse)
-                } else {
-                    return Result.failure(IllegalStateException("Error ${response.code} ${response.message}"))
-                }
+
+            return if (response.isSuccessful) {
+                val jsonResponse = response.body?.string()
+                val gson = Gson()
+                val apiResponse = gson.fromJson(jsonResponse, PushChannel::class.java)
+                apiResponse
+            } else {
+                null
+            }
         }
-        fun getAllChannels(page: Int, limit: Int, env: ENV): Result<AllChannelOptions> {
+        fun getAllChannels(page: Int, limit: Int, env: ENV): PushChannels {
             val url = PushURI.getChannels(page, limit, env)
             val obj = URL(url)
             val client = OkHttpClient()
             val request = Request.Builder().url(obj).get().build()
             val response = client.newCall(request).execute()
-            if(response.isSuccessful) {
+
+            return if(response.isSuccessful) {
                 val jsonResponse = response.body?.string()
                 val gson = Gson()
-                val apiResponse = gson.fromJson(jsonResponse, AllChannelOptions::class.java)
-                println(jsonResponse)
-                return Result.success(apiResponse)
+                val apiResponse = gson.fromJson(jsonResponse, PushChannels::class.java)
+                apiResponse
             } else {
-                return Result.failure(IllegalStateException("Error ${response.code} ${response.message}"))
+                PushChannels(0, emptyList())
             }
 
         }

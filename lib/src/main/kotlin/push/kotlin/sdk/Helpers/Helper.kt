@@ -11,6 +11,7 @@ class Helpers {
                 return "eip155:1:${address}"
             }
             return "eip155:5:${address}"
+        }
 
         fun walletToPCAIP(address: String): String {
             if(IsGroupChatId(address)){
