@@ -4,13 +4,13 @@ import org.web3j.crypto.Credentials
 import org.web3j.crypto.Sign
 import org.web3j.utils.Numeric
 
-//sealed class Result<out T> {
-//    data class Success<out T>(val value: T) : Result<T>()
-//    data class Failure(val error: Throwable) : Result<Nothing>()
-//}
-
 abstract class Signer {
     abstract fun getEip191Signature(message: String): Result<String>
+    abstract fun getAddress(): Result<String>
+}
+
+abstract class TypedSinger{
+    abstract fun getEip712Signature(message: String): Result<String>
     abstract fun getAddress(): Result<String>
 }
 

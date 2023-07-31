@@ -6,8 +6,10 @@ package push.kotlin.sdk
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-val UserPublicKey = """
------BEGIN PGP PUBLIC KEY BLOCK-----
+
+val PGP_LINKED_ADDRESS = "0xD26A7BF7fa0f8F1f3f73B056c9A67565A6aFE63c"
+
+val PGP_PUBLIC = """-----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: openpgp-mobile
 
 xsBNBGM0d6MBCACxjqDjA0lpIETCEYjgg5IwnXzm3Kp1ruKiNcsGV5O682ywYhYK
@@ -36,7 +38,7 @@ E9aL7drb4L/4ZQ9ZvKilPrfpkbXbRfNub1wJKCQVFnXxtXB83hlyq/tqrzeXjZai
 8+HQfOVr7NE7e20Vtat7P51yzZTBCPfOsPdHPRdJeWrIS76DmfKF0ATKOw0PNfWB
 EIXKzpU+pdxSjyFbgg9NGOczMtYUTkheIQeBerPjFWsoCEtHMcE=
 =5cZE
------END PGP PUBLIC KEY BLOCK-----"
+-----END PGP PUBLIC KEY BLOCK-----
 """
 
 val PGP_PK = """
@@ -111,8 +113,8 @@ class PgpTest {
 
     @Test
     fun pgpSignTest() {
-      val message = "Sing this message"
-      val signature = Pgp.sign(PGP_PK, message)
+      val message = "This is a good place to find a city"
+      val signature = Pgp.sign(PGP_PK, message).getOrThrow()
 
       val prefix = "-----BEGIN PGP SIGNATURE-----"
       val suffix = "-----END PGP SIGNATURE-----"
@@ -123,6 +125,20 @@ class PgpTest {
 
       assertEquals(prefix, actualPrefix.trim())
       assertEquals(suffix, actualSuffix.trim())
+    }
+
+    @Test
+    fun pgpGenerate(){
+      val prefix = "-----BEGIN PGP"
+      val suffix = "-----END PGP"
+
+      val (publicKey, privateKey) = Pgp.generate()
+
+      assert(publicKey.contains(prefix))
+      assert(publicKey.contains(suffix))
+
+      assert(privateKey.contains(prefix))
+      assert(privateKey.contains(suffix))
     }
   }
 }

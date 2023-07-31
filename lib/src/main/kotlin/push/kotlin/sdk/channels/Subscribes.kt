@@ -17,18 +17,17 @@ data class RequestStruct(
         @SerializedName("op") val op: String
 )
 
-data class Subscribers(
+data class ChannelSubscribers(
         val itemcount: Int?,
         val subscribers: List<String>
 )
 
-class Subscribe {
+class ChannelSubscriber {
     companion object {
-        fun getSubscribers(channel: String, env: ENV, page: Number, limit: Number): Result<Subscribers> {
-            val channelCAPI = Helpers.walletToPCAIP(env, channel)
+        fun getSubscribers(channel: String, page: Number, limit: Number, env: ENV): Result<ChannelSubscribers> {
+            val channelCAPI = Helpers.walletToCAIP(env, channel)
             val url = PushURI.getSubscribers(channelCAPI, page, limit, env)
 
-            println(url)
             val obj = URL(url)
             val client = OkHttpClient()
             val request = Request.Builder().url(obj).get().build()
@@ -36,8 +35,7 @@ class Subscribe {
             if(response.isSuccessful) {
                 val jsonResponse = response.body?.string()
                 val gson = Gson()
-                println(jsonResponse)
-                val apiResponse = gson.fromJson(jsonResponse,Subscribers::class.java)
+                val apiResponse = gson.fromJson(jsonResponse,ChannelSubscribers::class.java)
                 return Result.success(apiResponse)
             } else {
                 return Result.failure(IllegalStateException("Error ${response.code} ${response.message}"))

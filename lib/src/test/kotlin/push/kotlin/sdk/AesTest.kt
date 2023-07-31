@@ -5,6 +5,16 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class AesTest {
+  @Test fun AESCBCEncryptionWorks() {
+    val aes_key = AESCBC.getRandomString(15)
+//    val key = SecureRandom().generateSeed(15).toHexString()
+    val actualMessage = "welcome to push"
+    val cipherObtained = AESCBC.encrypt(aes_key, actualMessage)
+
+    val decoded = AESCBC.decrypt(aes_key,cipherObtained)
+    assertEquals(actualMessage,decoded)
+  }
+
   @Test fun AESCBCDecryptionWorks() {
     val aes_key = "H58gh7d1AhOqQoU"
     val cipherMessage = "U2FsdGVkX18+UrnRfChnSk36MaqUQC7gD7r8aD2PKtI="

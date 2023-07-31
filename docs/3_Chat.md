@@ -31,6 +31,8 @@ This package gives access to Push Protocol (Push Nodes) APIs. Visit [Developer D
   val user:PushUser.UserProfile? = PushUser.getUser(userAddress, ENV.staging)
 ```
 
+---
+
 ### **Get Inbox Feeds**
 ```kotlin
 val feedOptions = PushChat.GetChatsOptions(
@@ -40,6 +42,8 @@ val feedOptions = PushChat.GetChatsOptions(
 
 val feeds = PushChat.getChats(feedOptions)
 ```
+
+---
 
 ### **Get Chat Requests**
 ```kotlin
@@ -51,6 +55,8 @@ val feedOptions = PushChat.GetChatsOptions(
 val requests = PushChat.getChatRequests(feedOptions)
 ```
 
+---
+
 ### ***Get Latest Conversation  IPFS Hash***
 ```kotlin 
 // null if no conversation between the users
@@ -60,6 +66,8 @@ val hash:String? = PushChat.getConversationHash(
     ENV.staging
 ) 
 ```
+
+---
 
 ### ***Get latest message of the hash***
 ```kotlin 
@@ -71,6 +79,8 @@ val message:PushChat.Message = PushChat.getLatestMessage(
 )
 ```
 
+---
+
 ### ***Get Conversation History***
 ```kotlin
 val messages:Array<Message> = PushChat.getConversationHistory(
@@ -81,3 +91,84 @@ val messages:Array<Message> = PushChat.getConversationHistory(
     ENV.staging
 )
 ```
+
+---
+
+### **Send Chat Request**
+```kotlin
+import push.kotlin.sdk.ChatFunctions.SendOptions
+import push.kotlin.sdk.ChatFunctions.ChatSender
+
+val senderOptions = SendOptions(
+    messageContent = "Hello user",
+    messageType = "Text",
+    receiverAddress = RECEIVER_ETH_ADDRESS,
+    senderAddress = SENDER_ETH_ADDRESS,
+    senderPgpPrivateKey = SENDER_PGP_PRIVATE_KEY,
+    env = ENV.staging,
+)
+
+
+val sentMessage:Result<PushChat.Message> = ChatSender(senderOptions).sendIntent()
+```
+
+---
+
+### **Approve Chat Request**
+```kotlin
+import push.kotlin.sdk.ChatFunctions.ApproveOptions
+import push.kotlin.sdk.ChatFunctions.ChatApprover
+
+val approveOptions = ApproveOptions(
+    requesterAddress = REQUESTER_ETH_ADDRESS,
+    approverAddress = APPROVER_ETH_ADDRESS,
+    pgpPrivateKey = APPROVER_PGP_PRIVATE_KEY,
+    env = ENV.staging,
+)
+
+
+val approved:Result<String> = ChatApprover(approveOptins).approve()
+```
+
+---
+
+### ***Send Chat Message***
+
+```kotlin
+import push.kotlin.sdk.ChatFunctions.SendOptions
+import push.kotlin.sdk.ChatFunctions.ChatSender
+
+val senderOptions = SendOptions(
+    messageContent = "Hello user",
+    messageType = "Text",
+    receiverAddress = RECEIVER_ETH_ADDRESS,
+    senderAddress = SENDER_ETH_ADDRESS,
+    senderPgpPrivateKey = SENDER_PGP_PRIVATE_KEY,
+    env = ENV.staging,
+)
+
+
+val sentMessage:Result<PushChat.Message> = ChatSender(senderOptions).sendChat()
+```
+
+### ***SendMessage***
+
+* automatically does `sendChat()` or `sendIntent()` for the conversation between two users 
+
+```kotlin
+import push.kotlin.sdk.ChatFunctions.SendOptions
+import push.kotlin.sdk.ChatFunctions.ChatSender
+
+val senderOptions = SendOptions(
+    messageContent = "Hello user",
+    messageType = "Text",
+    receiverAddress = RECEIVER_ETH_ADDRESS,
+    senderAddress = SENDER_ETH_ADDRESS,
+    senderPgpPrivateKey = SENDER_PGP_PRIVATE_KEY,
+    env = ENV.staging,
+)
+
+
+val sentMessage:Result<PushChat.Message> = ChatSender(senderOptions).send()
+```
+
