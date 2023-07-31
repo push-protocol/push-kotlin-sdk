@@ -10,7 +10,15 @@ object PushURI {
     }
 
     fun getUser(env:ENV, userAddress:String):String{
-        return "${getBaseUri(env,"v2")}/users?caip10=eip155:${userAddress}"
+        return "${getBaseUri(env,"v2")}/users/?caip10=${Helpers.walletToPCAIP(userAddress)}"
+    }
+
+    fun updateUser(env:ENV,userAddress: String):String{
+        return "${getBaseUri(env,"v2")}/users/${Helpers.walletToPCAIP(userAddress)}/profile"
+    }
+
+    fun createUser(env: ENV):String{
+        return "${getBaseUri(env,"v2")}/users"
     }
 
     fun getChats(env:ENV, did:String, page:Number=1, limit:Number=10):String{
@@ -25,8 +33,32 @@ object PushURI {
         return "${getBaseUri(env)}/chat/users/$account/conversations/$converationId/hash"
     }
 
+    fun sendChatIntent(env:ENV):String{
+        return "${getBaseUri(env)}/chat/request"
+    }
+
+    fun sendChatMessage(env:ENV):String{
+        return "${getBaseUri(env)}/chat/message"
+    }
+
+    fun acceptChatRequest(env: ENV):String{
+        return "${getBaseUri(env)}/chat/request/accept"
+    }
+
     fun getConversationHashReslove(env: ENV,threadHash:String, limit: Number):String{
         return  "${getBaseUri(env)}/chat/conversationhash/$threadHash?fetchLimit=${limit}"
+    }
+
+    fun createChatGroup(env:ENV):String{
+        return "${getBaseUri(env)}/chat/groups"
+    }
+
+    fun getGroup(chatId:String, env:ENV):String{
+        return "${getBaseUri(env)}/chat/groups/$chatId"
+    }
+
+    fun updatedChatGroup(chatId:String, env:ENV):String{
+        return "${getBaseUri(env)}/chat/groups/$chatId"
     }
 
     fun OptInChannel(env: ENV, channel: String): String {

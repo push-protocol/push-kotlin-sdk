@@ -64,3 +64,54 @@ class PrivateKeySigner(private val privateKey: String) : Signer() {
     
     val decryptedPgpKey:Result<String> = PushUser.DecryptPgp.decryptPgpKey(user.encryptedPrivateKey, signer)
 ```
+
+---
+### **Update User Profie**
+```kotlin
+val pushUser:PushUser.UserProfile = PushUser.getUser(USER_ETH_ADDRESS, ENV.staging) 
+
+// update user profile
+user.profile.name = "New User Name"
+user.profile.desc = "New User Desc"
+user.profile.picture = "New IMAGE BASE64"
+
+val res:Result<Boolean> = PushUser.updateUser(
+    USER_ETH_ADDRESS,
+    user.profile,
+    USER_PGP_PRIVATE_KEY,
+    ENV.staging
+)
+```
+
+---
+### **Block Users**
+```kotlin
+val pushUser:PushUser.UserProfile = PushUser.getUser(USER_ETH_ADDRESS, ENV.staging) 
+
+val res:Result<Boolean> = PushUser.blockUser(
+    USER_ETH_ADDRESS,
+    USER_PGP_PRIVATE_KEY,
+    listOf(
+        ETH_ADDRESS_1_TO_BLOCK, 
+        ETH_ADDRESS_2_TO_BLOCK, 
+        ETH_ADDRESS_3_TO_BLOCK
+    ),
+    ENV.staging
+)
+```
+
+---
+### **UnBlock Users**
+```kotlin
+val pushUser:PushUser.UserProfile = PushUser.getUser(USER_ETH_ADDRESS, ENV.staging) 
+
+val res:Result<Boolean> = PushUser.unblockUser(
+    USER_ETH_ADDRESS,
+    USER_PGP_PRIVATE_KEY,
+    listOf(
+        ETH_ADDRESS_1_TO_UNBLOCK, 
+        ETH_ADDRESS_2_TO_UNBLOCK, 
+    ),
+    ENV.staging
+)
+```
