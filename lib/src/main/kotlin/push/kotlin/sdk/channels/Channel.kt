@@ -43,10 +43,10 @@ class Channel {
         fun getChannel(channel: String, env: ENV): PushChannel? {
             val channelCAIP = Helpers.walletToCAIP(env, channel)
             val url = PushURI.getChannel(env, channelCAIP)
-                val obj = URL(url)
-                val client = OkHttpClient()
-                val request = Request.Builder().url(obj).get().build()
-                val response = client.newCall(request).execute()
+            val obj = URL(url)
+            val client = OkHttpClient()
+            val request = Request.Builder().url(obj).get().build()
+            val response = client.newCall(request).execute()
 
             return if (response.isSuccessful) {
                 val jsonResponse = response.body?.string()

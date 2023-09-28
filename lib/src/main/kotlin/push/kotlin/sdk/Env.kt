@@ -92,7 +92,7 @@ object PushURI {
     fun getBaseUri(env: ENV, version:String="v1"):String {
 
         var baseURL = when (env) {
-            ENV.prod -> "https://backend-staging.epns.io"
+            ENV.prod -> "https://backend.epns.io"
             ENV.staging -> "https://backend-staging.epns.io"
             ENV.dev -> "https://backend-dev.epns.io"
         }
