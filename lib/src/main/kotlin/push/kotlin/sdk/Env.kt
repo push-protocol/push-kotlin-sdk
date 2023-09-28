@@ -86,7 +86,7 @@ object PushURI {
     }
 
     fun isUserSubscribed(env: ENV): String {
-        return "https://backend-staging.epns.io/apis/channels/_is_user_subscribed"
+        return "${getBaseUri(env)}/channels/_is_user_subscribed"
     }
 
     fun getBaseUri(env: ENV, version:String="v1"):String {
