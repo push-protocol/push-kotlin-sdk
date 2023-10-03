@@ -19,7 +19,7 @@ class ChannelOpt {
 
         fun getOptInMessage(channel: String, subscriber: String, env: ENV): String {
             val _channel = channel.lowercase()
-            val _subscriber = channel.lowercase()
+            val _subscriber = subscriber.lowercase()
             var _chainId = 5
 
             if(env == ENV.prod) {
@@ -33,7 +33,7 @@ class ChannelOpt {
 
         fun getOptOutMessage(channel: String, subscriber: String, env: ENV): String {
             val _channel = channel.lowercase()
-            val _subscriber = channel.lowercase()
+            val _subscriber = subscriber.lowercase()
             var _chainId = 5
 
             if(env == ENV.prod) {
