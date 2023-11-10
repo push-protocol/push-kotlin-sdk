@@ -17,6 +17,12 @@ fun getNewSinger():Pair<String, Signer>{
   return Pair(address, signer)
 }
 
+fun getSignerFromPk(address:String):Signer{
+  return PrivateKeySigner(address)
+}
+
+
+
 class MockEIP712OptinSigner:TypedSinger(){
   override fun getAddress(): Result<String> {
     return Result.success("0xD26A7BF7fa0f8F1f3f73B056c9A67565A6aFE63c")
