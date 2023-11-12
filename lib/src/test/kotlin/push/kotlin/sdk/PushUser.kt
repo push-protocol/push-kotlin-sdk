@@ -8,24 +8,30 @@ import kotlin.test.assertEquals
 
 
 class PushUserTest {
-    @Test fun getUserTest() {
-        val userAddress = "0xcA4D795c5e86E19Ef1B86948d7f5A3015dCE4a31"
-        val privateKey = "182982e5fb82ed4ba2bc9ab7f436600cba14ac15bc4e7ec0c363fc9edd9209c0"
-        
-        val user = PushUser.getUser(userAddress, ENV.prod) ?: throw IllegalStateException("");
-        val signer = getSignerFromPk(privateKey);
-        val pgpPK = DecryptPgp.decryptPgpKey(user.encryptedPrivateKey, signer).getOrThrow()
-        
-        println(pgpPK)
-        println("all good")
-    }
+    // @Test fun getUserTest() {
+    //     // val userAddress = "0xcA4D795c5e86E19Ef1B86948d7f5A3015dCE4a31"
+    //     // val privateKey = "182982e5fb82ed4ba2bc9ab7f436600cba14ac15bc4e7ec0c363fc9edd9209c0"
+    //     val userAddress = "0x048c400c0d3f409989570650a091874556f82200"
+    //     val privateKey = "a2668414f09ab2bf264a782b28145b247f0db9994662b0d4d6896d6b06406d8b"
 
-    // @Test fun createUserTest() {
-    //     val (address, signer) = getNewSinger()
-    //     val user = PushUser.createUser(signer, ENV.staging).getOrThrow();
-
-    //     assert(user.did.contains(address))
+        
+    //     val user = PushUser.getUser(userAddress, ENV.staging) ?: throw IllegalStateException("");
+    //     println(user)
+    //     val signer = getSignerFromPk(privateKey);
+    //     val pgpPK = DecryptPgp.decryptPgpKey(user.encryptedPrivateKey, signer).getOrThrow()
+        
+    //     println(pgpPK)
+    //     println("all good")
     // }
+
+    @Test fun createUserTest() {
+        val (address, signer) = getNewSinger()
+        println(address)
+        val user = PushUser.createUser(signer, ENV.prod).getOrThrow();
+        val pgpPK = DecryptPgp.decryptPgpKey(user.encryptedPrivateKey, signer).getOrThrow()
+        println(pgpPK)
+        println("all goodas")
+    }
 
     // @Test fun createUserAndFetchTest() {
     //     val (address, signer) = getNewSinger()
