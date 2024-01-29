@@ -89,6 +89,33 @@ class CreateGroupTest {
   }
 
   @Test
+  fun getGroupInfoTest(){
+    val (newAddress, signer) = getNewSinger()
+    val newUser = PushUser.createUser(signer, ENV.staging).getOrThrow()
+    val pgpPK = DecryptPgp.decryptPgpKey(newUser.encryptedPrivateKey, signer).getOrThrow()
+
+    val (member1,_) = getNewSinger()
+    val (member2,_) = getNewSinger()
+
+    val createOptions = PushGroup.CreateGroupOptions(
+            name = "$newAddress group",
+            description = "group made my the user $newAddress for testing",
+            image = BASE_64_IMAGE,
+            members = mutableListOf(member1,member2),
+            creatorAddress = newAddress,
+            isPublic = false,
+            creatorPgpPrivateKey = pgpPK,
+            env = ENV.staging
+    )
+
+    val group = PushGroup.createGroup(createOptions).getOrThrow()
+
+    val gotGroup = PushGroup.getGroupInfo(group.chatId, ENV.staging) ?: throw IllegalStateException("")
+
+    assertEquals(gotGroup.groupName, "$newAddress group")
+  }
+
+  @Test
   fun getEmptyGroupTest(){
     val gotGroup = PushGroup.getGroup("WRONG_GROUP_ID", ENV.staging)
     assert(gotGroup == null)

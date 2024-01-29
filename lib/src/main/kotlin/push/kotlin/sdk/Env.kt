@@ -57,6 +57,10 @@ object PushURI {
         return "${getBaseUri(env)}/chat/groups/$chatId"
     }
 
+    fun getGroupInfo(chatId:String, env:ENV):String{
+        return "${getBaseUri(env, version = "v2")}/chat/groups/$chatId"
+    }
+
     fun updatedChatGroup(chatId:String, env:ENV):String{
         return "${getBaseUri(env)}/chat/groups/$chatId"
     }

@@ -68,6 +68,23 @@ fun validateUpdateGroupOptions(group: PushGroup.PushGroupProfile):Result<Any>{
 
 
 class PushGroup {
+
+  data class PushGroupInfo(
+          var groupName: String,
+          var groupImage: String,
+          var groupDescription: String,
+          val isPublic: Boolean,
+          var groupCreator: String,
+          val chatId: String,
+          val scheduleAt: String?,
+          val scheduleEnd: String?,
+          val groupType: String,
+          val status: String?,
+          val rules: Map<String, String?>,
+          val meta: String?,
+          val sessionKey: String?,
+          val encryptedSecret: String?,
+  )
   data class PushGroupProfile(
           var members: List<Member>,
           var pendingMembers: List<Member>,
@@ -199,6 +216,26 @@ class PushGroup {
         val jsonResponse = response.body?.string()
         val gson = Gson()
         val apiResponse = gson.fromJson(jsonResponse, PushGroup.PushGroupProfile::class.java)
+        return apiResponse
+      } else {
+        println("Error: ${response.code} ${response.message}")
+      }
+
+      response.close()
+      return null
+    }
+
+     fun getGroupInfo(chatId: String, env: ENV):PushGroupInfo?{
+      val url = PushURI.getGroupInfo(chatId, env)
+      val client = OkHttpClient()
+
+      val request = Request.Builder().url(url).build()
+      val response = client.newCall(request).execute()
+
+      if (response.isSuccessful) {
+        val jsonResponse = response.body?.string()
+        val gson = Gson()
+        val apiResponse = gson.fromJson(jsonResponse, PushGroup.PushGroupInfo::class.java)
         return apiResponse
       } else {
         println("Error: ${response.code} ${response.message}")
