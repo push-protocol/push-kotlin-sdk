@@ -38,6 +38,35 @@ class CreateGroupTest {
   }
 
   @Test
+  fun  createPublicGroupV2Test(){
+    val (newAddress, signer) = getNewSinger()
+    val newUser = PushUser.createUser(signer, ENV.staging).getOrThrow()
+    val pgpPK = DecryptPgp.decryptPgpKey(newUser.encryptedPrivateKey, signer).getOrThrow()
+
+    val (member1,_) = getNewSinger()
+    val (member2,_) = getNewSinger()
+    val (member3,_) = getNewSinger()
+
+    val createOptions = PushGroup.CreateGroupOptionsV2(
+            name = "$newAddress group",
+            description = "group made my the user $newAddress for testing",
+            image = BASE_64_IMAGE,
+            members = mutableListOf(member1,member2, member3),
+            creatorAddress = newAddress,
+            isPublic = true,
+            creatorPgpPrivateKey = pgpPK,
+            env = ENV.staging,
+             config = PushGroup.GroupConfig(),
+            rules = mapOf(),
+            admins = mutableListOf(),
+            groupType =  "default",
+    )
+
+    val group = PushGroup.createGroupV2(createOptions).getOrThrow()
+    assertEquals(group.groupName, "$newAddress group")
+  }
+
+  @Test
   fun  createPrivateGroupTest(){
     val (newAddress, signer) = getNewSinger()
     val newUser = PushUser.createUser(signer, ENV.staging).getOrThrow()
