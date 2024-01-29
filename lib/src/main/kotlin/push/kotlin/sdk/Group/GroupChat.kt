@@ -1,6 +1,7 @@
 package push.kotlin.sdk.Group
 
 import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
 import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -165,6 +166,31 @@ class PushGroup {
     var verificationProof: String,
   )
 
+
+  data class RoleCounts(
+          val total: Int,
+          val pending: Int
+  )
+
+  data class ChatMemberCounts(
+          @SerializedName("totalMembersCount") val totalMembersCount: TotalMembersCount
+  )
+
+
+  data class MemberRoles(
+          @SerializedName("ADMIN") val admin: RoleCounts,
+          @SerializedName("MEMBER") val member: RoleCounts
+  )
+
+  data class TotalMembersCount(
+          @SerializedName("overallCount") val overallCount: Int,
+          @SerializedName("adminsCount") val adminsCount: Int,
+          @SerializedName("membersCount") val membersCount: Int,
+          @SerializedName("pendingCount") val pendingCount: Int,
+          @SerializedName("approvedCount") val approvedCount: Int,
+          @SerializedName("roles") val roles: MemberRoles
+  )
+
   companion object{
     public fun createGroup(options:CreateGroupOptions):Result<PushGroupProfile>{
       try {
@@ -236,6 +262,27 @@ class PushGroup {
         val jsonResponse = response.body?.string()
         val gson = Gson()
         val apiResponse = gson.fromJson(jsonResponse, PushGroup.PushGroupInfo::class.java)
+        return apiResponse
+      } else {
+        println("Error: ${response.code} ${response.message}")
+      }
+
+      response.close()
+      return null
+    }
+
+    fun getGroupMemberCount(chatId: String, env: ENV): ChatMemberCounts? {
+      val url = PushURI.getGroupMemberCount(chatId, env)
+      val client = OkHttpClient()
+
+      val request = Request.Builder().url(url).build()
+      val response = client.newCall(request).execute()
+      println("$chatId \n $url\n response.isSuccessful: ${response.isSuccessful}")
+      if (response.isSuccessful) {
+        val jsonResponse = response.body?.string()
+        println("jsonResponse: $jsonResponse")
+        val gson = Gson()
+        val apiResponse = gson.fromJson(jsonResponse, PushGroup.ChatMemberCounts::class.java)
         return apiResponse
       } else {
         println("Error: ${response.code} ${response.message}")
