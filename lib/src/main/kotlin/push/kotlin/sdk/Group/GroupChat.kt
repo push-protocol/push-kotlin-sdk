@@ -227,12 +227,17 @@ class PushGroup {
           val pending: Boolean? = null,
           val role: String? = null
   )
+  data class FetchGroupMemberPublicKeysOptions(
+          val chatId: String,
+          val page: Int = 1,
+          val limit: Int = 20,
+  )
 
   data class ChatMemberProfile(
           val address: String,
           val intent: Boolean,
           val role: String,
-//          val userInfo: PushUser.UserProfile? = null
+          val userInfo: PushUser.UserProfile? = null
   ) {
 
     companion object {
@@ -241,7 +246,7 @@ class PushGroup {
                 address = json["address"] as String,
                 intent = json["intent"] as Boolean,
                 role = json["role"] as String,
-//                userInfo = json["userInfo"]?.let { PushUser.UserProfile.fromJson(it as Map<String, Any>) }
+                userInfo = json["userInfo"]?.let { PushUser.UserProfile.fromJson(it as Map<String, Any>) }
         )
       }
     }
@@ -250,8 +255,7 @@ class PushGroup {
       return mapOf(
               "address" to address,
               "intent" to intent,
-              "role" to role,
-//              "userInfo" to userInfo?.toJson()
+              "role" to role
       )
     }
   }
@@ -355,8 +359,8 @@ class PushGroup {
       return null
     }
 
-    fun getGroupMembersPublicKeys(chatId: String, page: Int = 1, limit: Int = 20, env: ENV): List<GroupMemberPublicKey>? {
-      val url = PushURI.getGroupMembersPublicKeys(chatId, page, limit, env)
+    fun getGroupMembersPublicKeys(options: FetchGroupMemberPublicKeysOptions, env: ENV): List<GroupMemberPublicKey>? {
+      val url = PushURI.getGroupMembersPublicKeys(options.chatId,options. page,options. limit, env)
       val client = OkHttpClient()
 
       val request = Request.Builder().url(url).build()
@@ -415,6 +419,26 @@ class PushGroup {
       }
 
       val members = mutableListOf<ChatMemberProfile>()
+      pagesResult.forEach { members.addAll(it!!) }
+
+      return members
+    }
+
+    fun getAllGroupMembersPublicKeys(chatId: String,env: ENV ): List<GroupMemberPublicKey> {
+      if (chatId.isEmpty()) {
+        throw Exception("chatId cannot be null or empty")
+      }
+
+      val count = getGroupMemberCount(chatId, env)
+      val limit = 5000
+
+      val totalPages = ceil(count!!.totalMembersCount. overallCount.toDouble() / limit).toInt()
+
+      val pagesResult = (1..totalPages).map { index ->
+        getGroupMembersPublicKeys(FetchGroupMemberPublicKeysOptions(chatId = chatId, page = index, limit = limit),env)
+      }
+
+      val members = mutableListOf<GroupMemberPublicKey>()
       pagesResult.forEach { members.addAll(it!!) }
 
       return members
