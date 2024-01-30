@@ -2,6 +2,7 @@ package push.kotlin.sdk.Group
 
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -196,6 +197,28 @@ class PushGroup {
           val isPending: Boolean,
           val isAdmin: Boolean
   )
+
+  data class GroupMemberPublicKey(
+          val did: String,
+          val publicKey: String
+  ) {
+    companion object {
+      fun fromJson(json: Map<String, Any>): GroupMemberPublicKey {
+        return GroupMemberPublicKey(
+                did = json["did"] as String,
+                publicKey = json["publicKey"] as String
+        )
+      }
+    }
+
+    fun toJson(): Map<String, Any> {
+      return mapOf(
+              "did" to did,
+              "publicKey" to publicKey
+      )
+    }
+  }
+
   companion object{
     public fun createGroup(options:CreateGroupOptions):Result<PushGroupProfile>{
       try {
@@ -295,6 +318,26 @@ class PushGroup {
       return null
     }
 
+    fun getGroupMembersPublicKeys(chatId: String, page: Int = 1, limit: Int = 20, env: ENV): List<GroupMemberPublicKey>? {
+      val url = PushURI.getGroupMembersPublicKeys(chatId, page, limit, env)
+      val client = OkHttpClient()
+
+      val request = Request.Builder().url(url).build()
+      val response = client.newCall(request).execute()
+      if (response.isSuccessful) {
+        val jsonResponse = response.body?.string()
+        val gson = Gson()
+        val members = gson.fromJson(jsonResponse, Map::class.java)["members"] as? List<Map<String, String>>
+                ?: throw Exception("Failed to retrieve members")
+        return members.map { GroupMemberPublicKey.fromJson(it) }
+      } else {
+        println("Error: ${response.code} ${response.message}")
+      }
+
+      response.close()
+      return null
+    }
+
     fun getGroupMemberStatus(chatId: String,did: String, env: ENV): GroupMemberStatus? {
       if (chatId.isEmpty()){
         throw  IllegalArgumentException("chatId cannot be null or empty")
@@ -321,8 +364,7 @@ class PushGroup {
       response.close()
       return null
     }
-
-    fun getCreateGroupPayload(options: CreateGroupOptions, verificationProof: String):CreateGroupPayload{
+    private fun getCreateGroupPayload(options: CreateGroupOptions, verificationProof: String): CreateGroupPayload {
       return CreateGroupPayload(
         groupName = options.name,
         groupDescription = options.description,

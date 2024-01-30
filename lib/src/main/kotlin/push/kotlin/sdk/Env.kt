@@ -65,6 +65,10 @@ object PushURI {
         return "${getBaseUri(env)}/chat/groups/$chatId/members/count"
     }
 
+    fun getGroupMembersPublicKeys(chatId:String,page:Int,limit:Int, env:ENV):String{
+        return "${getBaseUri(env)}/chat/groups/$chatId/members/publicKeys?pageNumber=$page&pageSize=$limit"
+    }
+
     fun getGroupMemberStatus(chatId:String,did:String, env:ENV):String{
         return "${getBaseUri(env)}/chat/groups/$chatId/members/$did/status"
     }

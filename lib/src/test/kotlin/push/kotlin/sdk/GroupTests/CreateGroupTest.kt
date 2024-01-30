@@ -9,6 +9,7 @@ import push.kotlin.sdk.ChatFunctions.ChatApprover
 import push.kotlin.sdk.ChatFunctions.ChatSender
 import push.kotlin.sdk.ChatFunctions.SendOptions
 import push.kotlin.sdk.Group.PushGroup
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 
 class CreateGroupTest {
@@ -113,6 +114,34 @@ class CreateGroupTest {
     val status = PushGroup.getGroupMemberStatus(group.chatId, newUser.did, ENV.staging)
 
     assertEquals(status!!.isMember, true)
+  }
+
+  @Test
+  fun getGroupMembersPublicKeysTest() {
+    val (newAddress, signer) = getNewSinger()
+    val newUser = PushUser.createUser(signer, ENV.staging).getOrThrow()
+    val pgpPK = DecryptPgp.decryptPgpKey(newUser.encryptedPrivateKey, signer).getOrThrow()
+
+    val (member1, _) = getNewSinger()
+    val (member2, _) = getNewSinger()
+
+    val createOptions = PushGroup.CreateGroupOptions(
+            name = "$newAddress group",
+            description = "group made my the user $newAddress for testing",
+            image = BASE_64_IMAGE,
+            members = mutableListOf(member1, member2),
+            creatorAddress = newAddress,
+            isPublic = false,
+            creatorPgpPrivateKey = pgpPK,
+            env = ENV.staging
+    )
+
+    val group = PushGroup.createGroup(createOptions).getOrThrow()
+
+    val pKeys = PushGroup.getGroupMembersPublicKeys(group.chatId, 1, 20, ENV.staging)
+    val item = pKeys!!.first()
+
+    assertEquals(item.did, newUser.did)
   }
 
   @Test
