@@ -12,6 +12,7 @@ import push.kotlin.sdk.*
 import push.kotlin.sdk.HahHelper.GenerateSHA256Hash
 import push.kotlin.sdk.JsonHelpers.GetJsonStringFromGenericKV
 import push.kotlin.sdk.JsonHelpers.ListToJsonString
+import kotlin.math.*
 
 @Throws(IllegalArgumentException::class)
 fun createGroupOptionValidator(option: PushGroup.CreateGroupOptions) {
@@ -386,6 +387,7 @@ class PushGroup {
       val response = client.newCall(request).execute()
       if (response.isSuccessful) {
         val jsonResponse = response.body?.string()
+        println("json $jsonResponse")
         val gson = Gson()
         val members = gson.fromJson(jsonResponse, Map::class.java)["members"] as? List<Map<String, String>>
                 ?: throw Exception("Failed to retrieve members")
@@ -396,6 +398,26 @@ class PushGroup {
 
       response.close()
       return null
+    }
+
+    fun getAllGroupMembers(chatId: String,env: ENV ): List<ChatMemberProfile> {
+      if (chatId.isEmpty()) {
+        throw Exception("chatId cannot be null or empty")
+      }
+
+      val count = getGroupMemberCount(chatId, env)
+      val limit = 5000
+
+      val totalPages = ceil(count!!.totalMembersCount. overallCount.toDouble() / limit).toInt()
+
+      val pagesResult = (1..totalPages).map { index ->
+        getGroupMembers(FetchGroupMemberOptions(chatId = chatId, page = index, limit = limit),env)
+      }
+
+      val members = mutableListOf<ChatMemberProfile>()
+      pagesResult.forEach { members.addAll(it!!) }
+
+      return members
     }
 
     fun getGroupMemberStatus(chatId: String,did: String, env: ENV): GroupMemberStatus? {
