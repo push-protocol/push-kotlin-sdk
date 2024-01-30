@@ -191,6 +191,11 @@ class PushGroup {
           @SerializedName("roles") val roles: MemberRoles
   )
 
+  data class GroupMemberStatus(
+          val isMember: Boolean,
+          val isPending: Boolean,
+          val isAdmin: Boolean
+  )
   companion object{
     public fun createGroup(options:CreateGroupOptions):Result<PushGroupProfile>{
       try {
@@ -277,12 +282,37 @@ class PushGroup {
 
       val request = Request.Builder().url(url).build()
       val response = client.newCall(request).execute()
-      println("$chatId \n $url\n response.isSuccessful: ${response.isSuccessful}")
       if (response.isSuccessful) {
         val jsonResponse = response.body?.string()
-        println("jsonResponse: $jsonResponse")
         val gson = Gson()
         val apiResponse = gson.fromJson(jsonResponse, PushGroup.ChatMemberCounts::class.java)
+        return apiResponse
+      } else {
+        println("Error: ${response.code} ${response.message}")
+      }
+
+      response.close()
+      return null
+    }
+
+    fun getGroupMemberStatus(chatId: String,did: String, env: ENV): GroupMemberStatus? {
+      if (chatId.isEmpty()){
+        throw  IllegalArgumentException("chatId cannot be null or empty")
+      }
+
+      if (did.isEmpty()) {
+        throw IllegalArgumentException("did cannot be null or empty");
+      }
+
+      val url = PushURI.getGroupMemberStatus(chatId,did, env)
+      val client = OkHttpClient()
+
+      val request = Request.Builder().url(url).build()
+      val response = client.newCall(request).execute()
+      if (response.isSuccessful) {
+        val jsonResponse = response.body?.string()
+        val gson = Gson()
+        val apiResponse = gson.fromJson(jsonResponse, PushGroup.GroupMemberStatus::class.java)
         return apiResponse
       } else {
         println("Error: ${response.code} ${response.message}")
