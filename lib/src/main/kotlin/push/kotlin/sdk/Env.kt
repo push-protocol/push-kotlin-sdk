@@ -1,5 +1,7 @@
 package push.kotlin.sdk
 
+import push.kotlin.sdk.Group.PushGroup
+
 enum class ENV {
     prod, staging, dev
 }
@@ -67,6 +69,18 @@ object PushURI {
 
     fun getGroupMembersPublicKeys(chatId:String,page:Int,limit:Int, env:ENV):String{
         return "${getBaseUri(env)}/chat/groups/$chatId/members/publicKeys?pageNumber=$page&pageSize=$limit"
+    }
+
+    fun getGroupMembers(options: PushGroup.FetchGroupMemberOptions, env:ENV):String{
+        var url= "${getBaseUri(env)}/chat/groups/${options.chatId}/members?pageNumber=${options.page}&pageSize=${options.limit}"
+        if (options.pending != null) {
+            url += "&pending=${options.pending}";
+        }
+        if (options.role != null) {
+            url += "&role=${options.role}";
+        }
+
+        return  url;
     }
 
     fun getGroupMemberStatus(chatId:String,did:String, env:ENV):String{

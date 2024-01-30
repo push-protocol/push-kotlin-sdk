@@ -219,6 +219,42 @@ class PushGroup {
     }
   }
 
+  data class FetchGroupMemberOptions(
+          val chatId: String,
+          val page: Int = 1,
+          val limit: Int = 20,
+          val pending: Boolean? = null,
+          val role: String? = null
+  )
+
+  data class ChatMemberProfile(
+          val address: String,
+          val intent: Boolean,
+          val role: String,
+//          val userInfo: PushUser.UserProfile? = null
+  ) {
+
+    companion object {
+      fun fromJson(json: Map<String, Any>): ChatMemberProfile {
+        return ChatMemberProfile(
+                address = json["address"] as String,
+                intent = json["intent"] as Boolean,
+                role = json["role"] as String,
+//                userInfo = json["userInfo"]?.let { PushUser.UserProfile.fromJson(it as Map<String, Any>) }
+        )
+      }
+    }
+
+    fun toJson(): Map<String, Any?> {
+      return mapOf(
+              "address" to address,
+              "intent" to intent,
+              "role" to role,
+//              "userInfo" to userInfo?.toJson()
+      )
+    }
+  }
+
   companion object{
     public fun createGroup(options:CreateGroupOptions):Result<PushGroupProfile>{
       try {
@@ -330,6 +366,30 @@ class PushGroup {
         val members = gson.fromJson(jsonResponse, Map::class.java)["members"] as? List<Map<String, String>>
                 ?: throw Exception("Failed to retrieve members")
         return members.map { GroupMemberPublicKey.fromJson(it) }
+      } else {
+        println("Error: ${response.code} ${response.message}")
+      }
+
+      response.close()
+      return null
+    }
+
+    fun  getGroupMembers(options: FetchGroupMemberOptions, env: ENV): List<ChatMemberProfile>? {
+      if (options.chatId.isEmpty()) {
+        throw Exception("chatId cannot be null or empty")
+      }
+
+      val url = PushURI.getGroupMembers(options, env)
+      val client = OkHttpClient()
+
+      val request = Request.Builder().url(url).build()
+      val response = client.newCall(request).execute()
+      if (response.isSuccessful) {
+        val jsonResponse = response.body?.string()
+        val gson = Gson()
+        val members = gson.fromJson(jsonResponse, Map::class.java)["members"] as? List<Map<String, String>>
+                ?: throw Exception("Failed to retrieve members")
+        return members.map { ChatMemberProfile.fromJson(it) }
       } else {
         println("Error: ${response.code} ${response.message}")
       }
