@@ -1,9 +1,12 @@
 package push.kotlin.sdk.HahHelper
 
-import java.security.MessageDigest
+import com.google.gson.Gson
+import org.web3j.crypto.Hash
+
 
 fun GenerateSHA256Hash(message:String):String{
-  val messageDigest = MessageDigest.getInstance("SHA-256")
-  val byteArray = messageDigest.digest(message.toByteArray())
-  return byteArray.joinToString("") { "%02x".format(it) }
+  val jsonString = Gson().toJson(message)
+  val utf8Bytes = jsonString.toByteArray(Charsets.UTF_8)
+  val hashBytes = Hash.sha256(utf8Bytes)
+  return hashBytes.joinToString("") { "%02x".format(it) }
 }
