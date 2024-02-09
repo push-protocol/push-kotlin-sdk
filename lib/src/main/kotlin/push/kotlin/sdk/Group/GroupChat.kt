@@ -69,6 +69,34 @@ fun validateUpdateGroupOptions(group: PushGroup.PushGroupProfile):Result<Any>{
   return Result.success(true)
 }
 
+fun updateGroupProfileRequestValidator(
+        chatId: String,
+        groupName: String,
+        groupDescription: String,
+        address: String
+) {
+  if (chatId.isEmpty()) {
+    throw Exception("chatId cannot be null or empty")
+  }
+
+  if (groupName.isEmpty()) {
+    throw Exception("groupName cannot be null or empty")
+  }
+
+  if (groupName.length > 50) {
+    throw Exception("groupName cannot be more than 50 characters")
+  }
+
+  if (groupDescription.length > 150) {
+    throw Exception("groupDescription cannot be more than 150 characters")
+  }
+
+  if (!Helpers.isValidAddress(address)) {
+    throw Exception("Invalid address field!")
+  }
+}
+
+
 
 class PushGroup {
 
@@ -83,7 +111,7 @@ class PushGroup {
           val scheduleEnd: String?,
           val groupType: String,
           val status: String?,
-          val rules: Map<String, String?>,
+          val rules: Map<String, String?>?,
           val meta: String?,
           val sessionKey: String?,
           val encryptedSecret: String?,
@@ -259,6 +287,16 @@ class PushGroup {
       )
     }
   }
+
+  data class  UpdateGroupProfileOptions(
+          var account: String,
+          val chatId: String,
+          val groupName: String,
+          var groupDescription: String,
+          var groupImage: String,
+          var rules: Map<String, String?> = emptyMap(),
+          var pgpPrivateKey: String
+  )
 
   companion object{
     public fun createGroup(options:CreateGroupOptions):Result<PushGroupProfile>{
@@ -526,7 +564,7 @@ class PushGroup {
       return  GenerateSHA256Hash(createGroupJSONString)
     }
 
-    fun getUpdateGroupHash(updatedGroup: PushGroupProfile):String{
+    private fun getUpdateGroupHash(updatedGroup: PushGroupProfile):String{
       var createGroupJSONString = GetJsonStringFromGenericKV(listOf(
         "groupName" to JsonPrimitive(updatedGroup.groupName),
         "groupDescription" to JsonPrimitive(updatedGroup.groupDescription),
@@ -547,7 +585,7 @@ class PushGroup {
 
       return  GenerateSHA256Hash(createGroupJSONString)
     }
-    fun createGroupService(payload:CreateGroupPayload, env: ENV):Result<PushGroupProfile>{
+    private fun createGroupService(payload:CreateGroupPayload, env: ENV):Result<PushGroupProfile>{
       val url = PushURI.createChatGroup(env)
       val mediaType = "application/json; charset=utf-8".toMediaType()
       val body = Gson().toJson(payload).toRequestBody(mediaType)
@@ -569,7 +607,7 @@ class PushGroup {
       }
     }
 
-    fun updateGroupService(chatId: String, payload:UpdateGroupPayload, env: ENV):Result<PushGroupProfile>{
+    private fun updateGroupService(chatId: String, payload:UpdateGroupPayload, env: ENV):Result<PushGroupProfile>{
       val url = PushURI.updatedChatGroup(chatId, env)
       val mediaType = "application/json; charset=utf-8".toMediaType()
       val body = Gson().toJson(payload).toRequestBody(mediaType)
@@ -590,6 +628,69 @@ class PushGroup {
         return  Result.failure(IllegalStateException("Error: ${response.code} ${response.message}"))
       }
     }
+
+    fun updateGroupProfile(options: UpdateGroupProfileOptions, env: ENV): Result<PushGroupInfo> {
+
+      // Validations
+      if (options.account.isEmpty()) {
+        throw Exception("account cannot be empty")
+      }
+
+      updateGroupProfileRequestValidator(
+                 chatId = options.chatId,
+              groupName = options.groupName,
+              groupDescription = options.groupDescription ?: "",
+              address = options.account,
+      )
+
+      val group = getGroupInfo(chatId = options.chatId, env)
+      val  updateJsonString = mapOf(
+              "groupName" to (options.groupName),
+              "groupDescription" to (options.groupDescription ?: group?.groupDescription),
+              "groupImage" to (options.groupImage),
+              "rules" to options.rules,
+              "isPublic" to (group?.isPublic),
+              "groupType" to (group?.groupType)
+      )
+      val hash = GenerateSHA256Hash(updateJsonString)
+      val signature =Pgp.sign(message = hash, pgpPrivateKey = options.pgpPrivateKey).getOrElse { exception -> return Result.failure(exception) }
+      val sigType = "pgpv2"
+      val profileVerificationProof = "$sigType:$signature:${Helpers.walletToPCAIP( options.account)}"
+
+      val payload = mapOf(
+              "groupName" to options.groupName,
+              "groupDescription" to (options.groupDescription ?: group?.groupDescription),
+              "groupImage" to options.groupImage,
+              "rules" to (options.rules ?: emptyMap<String, Any>()),
+              "profileVerificationProof" to profileVerificationProof.trimIndent()
+      )
+
+      val url = PushURI.updatedChatGroupProfile(options.chatId, env)
+      val mediaType = "application/json; charset=utf-8".toMediaType()
+      val body =Gson().toJson(payload)
+              .toRequestBody(mediaType)
+
+
+      val client = OkHttpClient()
+      val request = Request.Builder().url(url).put(body).build()
+      val response = client.newCall(request).execute()
+
+
+      if (response.isSuccessful) {
+        val jsonResponse = response.body?.string()
+        val gson = Gson()
+        val apiResponse = gson.fromJson(jsonResponse, PushGroupInfo::class.java)
+        return Result.success(apiResponse)
+      } else {
+        println(url)
+        println(Gson().toJson(payload))
+        println("Error: ${response.code} ${response.message}")
+        return  Result.failure(IllegalStateException("Error: ${response.code} ${response.message}"))
+      }
+    }
+
   }
+
+
 
 }
