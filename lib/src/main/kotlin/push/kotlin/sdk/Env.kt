@@ -95,6 +95,10 @@ object PushURI {
         return "${getBaseUri(env)}/chat/groups/$chatId/profile"
     }
 
+    fun updatedChatGroupMember(chatId:String, env:ENV):String{
+        return "${getBaseUri(env)}/chat/groups/$chatId/members"
+    }
+
     fun OptInChannel(env: ENV, channel: String): String {
         return "${getBaseUri(env)}/channels/$channel/subscribe"
     }

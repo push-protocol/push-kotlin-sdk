@@ -1,6 +1,7 @@
 package push.kotlin.sdk.Group
 
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.google.gson.annotations.SerializedName
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonPrimitive
@@ -12,6 +13,7 @@ import push.kotlin.sdk.*
 import push.kotlin.sdk.HahHelper.GenerateSHA256Hash
 import push.kotlin.sdk.JsonHelpers.GetJsonStringFromGenericKV
 import push.kotlin.sdk.JsonHelpers.ListToJsonString
+import push.kotlin.sdk.PushUser.UserProfile
 import kotlin.math.*
 
 @Throws(IllegalArgumentException::class)
@@ -95,6 +97,47 @@ fun updateGroupProfileRequestValidator(
     throw Exception("Invalid address field!")
   }
 }
+
+fun validateGroupMemberUpdateOptions(
+        chatId: String,
+        upsert: PushGroup.UpsertData,
+        remove: List<String>
+) {
+  if (chatId.isEmpty()) {
+    throw Exception("chatId cannot be null or empty")
+  }
+
+  // Validating upsert object
+  val allowedRoles = listOf("members", "admins")
+
+  upsert.toJson().forEach { (role, value) ->
+    if (!allowedRoles.contains(role)) {
+      throw Exception("Invalid role: $role. Allowed roles are ${allowedRoles.joinToString(", ")}.")
+    }
+
+    if (value is List<*> && value.size > 1000) {
+      throw Exception("$role array cannot have more than 1000 addresses.")
+    }
+
+    (value as? List<String>)?.forEach { address ->
+      if (!Helpers.isValidAddress(address)) {
+        throw Exception("Invalid address found in $role list.")
+      }
+    }
+  }
+
+  // Validating remove array
+  if (remove.size > 1000) {
+    throw Exception("Remove array cannot have more than 1000 addresses.")
+  }
+
+  remove.forEach { address ->
+    if (!Helpers.isValidAddress(address)) {
+      throw Exception("Invalid address found in remove list.")
+    }
+  }
+}
+
 
 
 
@@ -265,7 +308,7 @@ class PushGroup {
           val address: String,
           val intent: Boolean,
           val role: String,
-          val userInfo: PushUser.UserProfile? = null
+          val userInfo: UserProfile? = null
   ) {
 
     companion object {
@@ -297,6 +340,33 @@ class PushGroup {
           var rules: Map<String, String?> = emptyMap(),
           var pgpPrivateKey: String
   )
+
+  data class UpdateGroupMemberOptions(
+          var account: String,
+          val chatId: String,
+          var upsert: UpsertData = UpsertData(),
+          val remove: List<String> = listOf(),
+          var pgpPrivateKey: String
+  )
+
+  class UpsertData(
+          val members: List<String> = emptyList(),
+          val admins: List<String> = emptyList()
+  ) {
+    constructor(json: Map<String, Any>) : this(
+            members = (json["members"] as? List<String>) ?: emptyList(),
+            admins = (json["admins"] as? List<String>) ?: emptyList()
+    )
+
+    fun toJson(): Map<String, List<String>> {
+      return mapOf(
+              "members" to members,
+              "admins" to admins
+      )
+    }
+  }
+
+
 
   companion object{
     public fun createGroup(options:CreateGroupOptions):Result<PushGroupProfile>{
@@ -645,12 +715,12 @@ class PushGroup {
 
       val group = getGroupInfo(chatId = options.chatId, env)
       val  updateJsonString = mapOf(
-              "groupName" to (options.groupName),
+              "groupName" to options.groupName,
               "groupDescription" to (options.groupDescription ?: group?.groupDescription),
-              "groupImage" to (options.groupImage),
+              "groupImage" to options.groupImage,
               "rules" to options.rules,
-              "isPublic" to (group?.isPublic),
-              "groupType" to (group?.groupType)
+              "isPublic" to group?.isPublic,
+              "groupType" to group?.groupType
       )
       val hash = GenerateSHA256Hash(updateJsonString)
       val signature =Pgp.sign(message = hash, pgpPrivateKey = options.pgpPrivateKey).getOrElse { exception -> return Result.failure(exception) }
@@ -689,8 +759,103 @@ class PushGroup {
       }
     }
 
+
+    fun updateGroupMember(options: UpdateGroupMemberOptions, env: ENV): Result<PushGroupInfo> {
+      validateGroupMemberUpdateOptions(chatId = options.chatId, upsert = options.upsert, remove = options.remove)
+
+      val convertedUpsert = mutableMapOf<String, List<String>>()
+      for ((key, value) in options.upsert.toJson()) {
+        convertedUpsert[key] = value.map { Helpers.walletToPCAIP(it) };
+      }
+
+      val convertedRemove = options.remove.map { Helpers.walletToPCAIP(it) }
+
+      val connectedUser = PushUser.getUser(userAddress = options.account, env)
+              ?: throw Exception("${options.account} not found")
+
+      val group = getGroupInfo(chatId = options.chatId, env) ?: throw Exception("Group not found")
+
+      var encryptedSecret: String? = null;
+      if (!group.isPublic) {
+        if (group.encryptedSecret != null) {
+          val isMember = getGroupMemberStatus(chatId = options.chatId, did = connectedUser.did, env = env)!!.isMember
+
+          val removeParticipantSet = convertedRemove.map { it.lowercase() }.toSet()
+
+          var groupMembers = getAllGroupMembersPublicKeys(chatId = options.chatId, env = env)
+
+          var sameMembers = true;
+
+          for (member in groupMembers) {
+            if (removeParticipantSet.contains(member.did.lowercase())) {
+              sameMembers = false
+              break
+            }
+          }
+
+          if (!sameMembers || !isMember) {
+            val secretKey = AESGCM.generateRandomSecret(15)
+            val publicKeys = mutableListOf<String>()
+
+            // This will now only take keys of non-removed members
+            for (member in groupMembers) {
+              if (!removeParticipantSet.contains(member.did.lowercase())) {
+                publicKeys.add(member.publicKey)
+              }
+            }
+
+            // This is autoJoin Case
+            if (!isMember) {
+              publicKeys.add(connectedUser.publicKey)
+            }
+
+            encryptedSecret = Pgp.encrypt(message = secretKey, userPublicKeys = publicKeys).getOrElse { exception -> return Result.failure(exception) }
+          }
+        }
+      }
+
+      val bodyToBeHashed = mapOf(
+              "upsert" to convertedUpsert,
+              "remove" to convertedRemove,
+              "encryptedSecret" to encryptedSecret,
+      )
+
+
+      val hash = GenerateSHA256Hash(bodyToBeHashed);
+      val signature = Pgp.sign(options.pgpPrivateKey, hash).getOrElse { exception -> return Result.failure(exception) }
+      val sigType = "pgpv2";
+      val deltaVerificationProof ="$sigType:$signature:${Helpers.walletToPCAIP(connectedUser.did)}";
+
+      val payload = mapOf(
+              "upsert" to convertedUpsert,
+              "remove" to convertedRemove,
+              "encryptedSecret" to encryptedSecret,
+              "deltaVerificationProof" to deltaVerificationProof
+      )
+
+      val url = PushURI.updatedChatGroupMember(options.chatId, env)
+      val mediaType = "application/json; charset=utf-8".toMediaType()
+      val body = GsonBuilder().serializeNulls().create().toJson(payload)
+              .toRequestBody(mediaType)
+
+
+      val client = OkHttpClient()
+      val request = Request.Builder().url(url).put(body).build()
+      val response = client.newCall(request).execute()
+
+
+      if (response.isSuccessful) {
+        val jsonResponse = response.body?.string()
+        val gson = Gson()
+        val apiResponse = gson.fromJson(jsonResponse, PushGroupInfo::class.java)
+        return Result.success(apiResponse)
+      } else {
+        println(url)
+        println(Gson().toJson(payload))
+        println("Error: ${response.code} ${response.message}")
+        return  Result.failure(IllegalStateException("Error: ${response.code} ${response.message}"))
+      }
+
+    }
   }
-
-
-
 }

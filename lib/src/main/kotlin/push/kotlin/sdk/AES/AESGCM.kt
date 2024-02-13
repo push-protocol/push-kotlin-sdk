@@ -5,6 +5,7 @@ import javax.crypto.Cipher
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
+import kotlin.random.Random
 
 
 fun byteArrayToHexString(byteArray: ByteArray): String {
@@ -109,6 +110,16 @@ class AESGCM {
             }
 
             return byteArray
+        }
+
+        fun generateRandomSecret(length: Int): String {
+            val characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+            val charactersLength = characters.length
+            val buffer = StringBuilder()
+            repeat(length) {
+                buffer.append(characters[Random.nextInt(charactersLength)])
+            }
+            return buffer.toString()
         }
 
     }

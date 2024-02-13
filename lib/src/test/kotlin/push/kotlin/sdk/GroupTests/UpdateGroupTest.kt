@@ -101,6 +101,63 @@ class UpdateGroupTest {
     val updatedGroup = PushGroup.updateGroupProfile(options, ENV.staging).getOrThrow()
     assertEquals(updatedGroup.groupName, newName)
   }
+
+
+  @Test
+  fun removeGroupMember(){
+    val (newAddress, signer) = getSingerWithKey("c41b72d56258e50595baa969eb0949c5cee9926ac55f7bad21fe327236772e0c")
+    val newUser = PushUser.getUser(newAddress, ENV.staging)  ?: throw Exception("$newAddress not found")
+    val pgpPK = DecryptPgp.decryptPgpKey(newUser.encryptedPrivateKey, signer).getOrThrow()
+
+
+    val (member1,_) = getNewSinger()
+    val (member2,_) = getNewSinger()
+    val (member3,_) = getNewSinger()
+
+    println("creator address: $newAddress")
+    val newName = "update 23"
+
+    val group = PushGroup.getGroup("3befa2177777e591bdbd9b8f9cd820f75ed77388ef21665c9830f18288acae9c",ENV.staging )!!
+    val options = PushGroup.UpdateGroupMemberOptions(
+            account = newAddress,
+            chatId = group.chatId,
+            pgpPrivateKey = pgpPK,
+            remove = listOf("eip155:0x6a0d7b4a0c29adacf92c562e217cafe7d8a9e1b7"),
+            upsert = PushGroup.UpsertData()
+    )
+    val updatedGroup = PushGroup.updateGroupMember(options, ENV.staging).getOrThrow()
+
+    assertEquals(updatedGroup.chatId, "3befa2177777e591bdbd9b8f9cd820f75ed77388ef21665c9830f18288acae9c")
+  }
+
+  @Test
+  fun insertGroupMember(){
+    val (newAddress, signer) = getSingerWithKey("c41b72d56258e50595baa969eb0949c5cee9926ac55f7bad21fe327236772e0c")
+    val newUser = PushUser.getUser(newAddress, ENV.staging)  ?: throw Exception("$newAddress not found")
+    val pgpPK = DecryptPgp.decryptPgpKey(newUser.encryptedPrivateKey, signer).getOrThrow()
+
+
+    val (member1,_) = getNewSinger()
+    val (member2,_) = getNewSinger()
+    val (member3,_) = getNewSinger()
+
+    println("creator address: $newAddress")
+    val newName = "update 23"
+
+    val group = PushGroup.getGroup("3befa2177777e591bdbd9b8f9cd820f75ed77388ef21665c9830f18288acae9c",ENV.staging )!!
+    val options = PushGroup.UpdateGroupMemberOptions(
+            account = newAddress,
+            chatId = group.chatId,
+            pgpPrivateKey = pgpPK,
+//            remove = listOf("eip155:0x6a0d7b4a0c29adacf92c562e217cafe7d8a9e1b7"),
+            upsert = PushGroup.UpsertData(
+                    members = listOf("eip155:0x6a0d7b4a0c29adacf92c562e217cafe7d8a9e1b7"),
+            )
+    )
+    val updatedGroup = PushGroup.updateGroupMember(options, ENV.staging).getOrThrow()
+
+    assertEquals(updatedGroup.chatId, "3befa2177777e591bdbd9b8f9cd820f75ed77388ef21665c9830f18288acae9c")
+  }
   @Test
   fun hashTest(){
     val result = GenerateSHA256Hash("table")
