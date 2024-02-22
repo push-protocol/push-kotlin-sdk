@@ -52,14 +52,14 @@ class CreateGroupTest {
             name = "$newAddress group",
             description = "group made my the user $newAddress for testing",
             image = BASE_64_IMAGE,
-            members = mutableListOf(member1,member2, member3),
             creatorAddress = newAddress,
             isPublic = true,
             creatorPgpPrivateKey = pgpPK,
             env = ENV.staging,
-             config = PushGroup.GroupConfig(),
+            config = PushGroup.GroupConfig(),
             rules = mapOf(),
-            admins = mutableListOf(),
+            members = mutableListOf(member1,member2),
+            admins = mutableListOf(member3),
             groupType =  "default",
     )
 
@@ -182,28 +182,26 @@ class CreateGroupTest {
     val (member1, _) = getNewSinger()
     val (member2, _) = getNewSinger()
 
-    val createOptions = PushGroup.CreateGroupOptions(
+    val createOptions = PushGroup.CreateGroupOptionsV2(
             name = "$newAddress group",
             description = "group made my the user $newAddress for testing",
             image = BASE_64_IMAGE,
-            members = mutableListOf(member1, member2),
+            members = mutableListOf(member1,member2),
             creatorAddress = newAddress,
             isPublic = false,
             creatorPgpPrivateKey = pgpPK,
-            env = ENV.staging
+            env = ENV.staging,
+            admins = mutableListOf(),
+            config = PushGroup.GroupConfig(),
+            rules = mapOf()
     )
-
-    val group = PushGroup.createGroup(createOptions).getOrThrow()
+    val group = PushGroup.createGroupV2(createOptions).getOrThrow()
 
     val getOptions = PushGroup.FetchGroupMemberOptions(group.chatId)
     val members = PushGroup.getGroupMembers(getOptions, env = ENV.staging)
-    val memberAddressList = mutableListOf<String>()
 
-    for (member in members!!) {
-      memberAddressList.add(member.address)
-    }
 
-    assertContains(memberAddressList, newUser.did)
+    assertEquals(members!!.size, 3)
   }
 
   @Test
@@ -245,18 +243,24 @@ class CreateGroupTest {
 
     val (member1, _) = getNewSinger()
     val (member2, _) = getNewSinger()
+    val (member3, _) = getNewSinger()
 
-    val createOptions = PushGroup.CreateGroupOptions(
+    val createOptions = PushGroup.CreateGroupOptionsV2(
             name = "$newAddress group",
             description = "group made my the user $newAddress for testing",
             image = BASE_64_IMAGE,
-            members = mutableListOf(member1, member2),
             creatorAddress = newAddress,
-            isPublic = false,
+            isPublic = true,
             creatorPgpPrivateKey = pgpPK,
-            env = ENV.staging
+            env = ENV.staging,
+            config = PushGroup.GroupConfig(),
+            rules = mapOf(),
+            members = mutableListOf(member1,member2),
+            admins = mutableListOf(member3),
+            groupType =  "default",
     )
-    val group = PushGroup.createGroup(createOptions).getOrThrow()
+
+    val group = PushGroup.createGroupV2(createOptions).getOrThrow()
 
     val members = PushGroup.getAllGroupMembersPublicKeys(group.chatId, env = ENV.staging)
     val memberAddressList = mutableListOf<String>()
@@ -277,7 +281,7 @@ class CreateGroupTest {
     val (member1,_) = getNewSinger()
     val (member2,_) = getNewSinger()
 
-    val createOptions = PushGroup.CreateGroupOptions(
+    val createOptions = PushGroup.CreateGroupOptionsV2(
             name = "$newAddress group",
             description = "group made my the user $newAddress for testing",
             image = BASE_64_IMAGE,
@@ -285,10 +289,13 @@ class CreateGroupTest {
             creatorAddress = newAddress,
             isPublic = false,
             creatorPgpPrivateKey = pgpPK,
-            env = ENV.staging
+            env = ENV.staging,
+            admins = mutableListOf(),
+            rules = mapOf(),
+            config = PushGroup.GroupConfig()
     )
 
-    val group = PushGroup.createGroup(createOptions).getOrThrow()
+    val group = PushGroup.createGroupV2(createOptions).getOrThrow()
 
     val gotGroup = PushGroup.getGroupInfo(group.chatId, ENV.staging) ?: throw IllegalStateException("")
 
