@@ -1,5 +1,7 @@
 package push.kotlin.sdk
 
+import push.kotlin.sdk.Group.PushGroup
+
 enum class ENV {
     prod, staging, dev
 }
@@ -52,13 +54,52 @@ object PushURI {
     fun createChatGroup(env:ENV):String{
         return "${getBaseUri(env)}/chat/groups"
     }
+    fun createChatGroupV2(env:ENV):String{
+        return "${getBaseUri(env,"v2" )}/chat/groups"
+    }
 
     fun getGroup(chatId:String, env:ENV):String{
         return "${getBaseUri(env)}/chat/groups/$chatId"
     }
 
+    fun getGroupInfo(chatId:String, env:ENV):String{
+        return "${getBaseUri(env, version = "v2")}/chat/groups/$chatId"
+    }
+
+    fun getGroupMemberCount(chatId:String, env:ENV):String{
+        return "${getBaseUri(env)}/chat/groups/$chatId/members/count"
+    }
+
+    fun getGroupMembersPublicKeys(chatId:String,page:Int,limit:Int, env:ENV):String{
+        return "${getBaseUri(env)}/chat/groups/$chatId/members/publicKeys?pageNumber=$page&pageSize=$limit"
+    }
+
+    fun getGroupMembers(options: PushGroup.FetchGroupMemberOptions, env:ENV):String{
+        var url= "${getBaseUri(env)}/chat/groups/${options.chatId}/members?pageNumber=${options.page}&pageSize=${options.limit}"
+        if (options.pending != null) {
+            url += "&pending=${options.pending}";
+        }
+        if (options.role != null) {
+            url += "&role=${options.role}";
+        }
+
+        return  url;
+    }
+
+    fun getGroupMemberStatus(chatId:String,did:String, env:ENV):String{
+        return "${getBaseUri(env)}/chat/groups/$chatId/members/$did/status"
+    }
+
     fun updatedChatGroup(chatId:String, env:ENV):String{
         return "${getBaseUri(env)}/chat/groups/$chatId"
+    }
+
+    fun updatedChatGroupProfile(chatId:String, env:ENV):String{
+        return "${getBaseUri(env)}/chat/groups/$chatId/profile"
+    }
+
+    fun updatedChatGroupMember(chatId:String, env:ENV):String{
+        return "${getBaseUri(env)}/chat/groups/$chatId/members"
     }
 
     fun OptInChannel(env: ENV, channel: String): String {

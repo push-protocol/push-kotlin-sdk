@@ -1,12 +1,15 @@
 package push.kotlin.sdk.GroupTests
 
 import BASE_64_IMAGE
+import com.google.gson.Gson
 import getNewSinger
+import getSingerWithKey
 import org.junit.jupiter.api.Test
 import push.kotlin.sdk.*
 import push.kotlin.sdk.ChatFunctions.ApproveOptions
 import push.kotlin.sdk.ChatFunctions.ChatApprover
 import push.kotlin.sdk.Group.PushGroup
+import push.kotlin.sdk.HahHelper.GenerateSHA256Hash
 import kotlin.test.assertEquals
 
 class UpdateGroupTest {
@@ -20,22 +23,119 @@ class UpdateGroupTest {
     val (member1,_) = getNewSinger()
 
     // create group
-    val createOptions = PushGroup.CreateGroupOptions(
-      name = "$newAddress group",
-      description = "group made my the user $newAddress for testing",
-      image = BASE_64_IMAGE,
-      members = mutableListOf(member1),
-      creatorAddress = newAddress,
-      isPublic = false,
-      creatorPgpPrivateKey = pgpPK,
-      env = ENV.staging
+    val createOptions = PushGroup.CreateGroupOptionsV2(
+            name = "$newAddress group",
+            description = "group made my the user $newAddress for testing",
+            image = BASE_64_IMAGE,
+            members = mutableListOf(member1),
+            creatorAddress = newAddress,
+            isPublic = false,
+            creatorPgpPrivateKey = pgpPK,
+            env = ENV.staging,
+            admins = mutableListOf(),
+            config = PushGroup.GroupConfig(),
+            rules = mapOf()
     )
 
-    val group = PushGroup.createGroup(createOptions).getOrThrow()
+    val group = PushGroup.createGroupV2(createOptions).getOrThrow()
     group.groupName = "update $newAddress"
 
-    val updatedGroup = PushGroup.updateGroup(group, newAddress, pgpPK, ENV.staging).getOrThrow()
+
+    val updatedGroup = PushGroup.updateGroupProfile(
+            PushGroup.UpdateGroupProfileOptions(
+                    groupDescription = group.groupName,
+                    groupName = group.groupName,
+                    chatId = group.chatId,
+                    groupImage = group.groupImage,
+                    pgpPrivateKey = pgpPK,
+                    account = newAddress
+            ),
+            env = ENV.staging,
+    ).getOrThrow()
     assertEquals(updatedGroup.groupName, group.groupName)
+  }
+
+  @Test
+  fun removeGroupMember(){
+    val (newAddress, signer) = getNewSinger()
+    val newUser = PushUser.createUser(signer, ENV.staging).getOrThrow()
+    val pgpPK = DecryptPgp.decryptPgpKey(newUser.encryptedPrivateKey, signer).getOrThrow()
+
+
+    val (member1,_) = getNewSinger()
+    val (member2,_) = getNewSinger()
+    val (member3,_) = getNewSinger()
+
+
+    val createOptions = PushGroup.CreateGroupOptionsV2(
+            name = "$newAddress group",
+            description = "group made my the user $newAddress for testing",
+            image = BASE_64_IMAGE,
+            members = mutableListOf(member1, member2),
+            creatorAddress = newAddress,
+            isPublic = false,
+            creatorPgpPrivateKey = pgpPK,
+            env = ENV.staging,
+            admins = mutableListOf(member3),
+            config = PushGroup.GroupConfig(),
+            rules = mapOf()
+    )
+
+    val group = PushGroup.createGroupV2(createOptions).getOrThrow()
+
+    val options = PushGroup.UpdateGroupMemberOptions(
+            account = newAddress,
+            chatId = group.chatId,
+            pgpPrivateKey = pgpPK,
+            remove = listOf(member2),
+            upsert = PushGroup.UpsertData()
+    )
+    val updatedGroup = PushGroup.updateGroupMember(options, ENV.staging).getOrThrow()
+
+    assertEquals(updatedGroup.chatId, group.chatId)
+  }
+
+  @Test
+  fun insertGroupMember(){
+
+    val (newAddress, signer) = getNewSinger()
+    val newUser = PushUser.createUser(signer, ENV.staging).getOrThrow()
+    val pgpPK = DecryptPgp.decryptPgpKey(newUser.encryptedPrivateKey, signer).getOrThrow()
+
+
+    val (member1,_) = getNewSinger()
+    val (member2,_) = getNewSinger()
+    val (member3,_) = getNewSinger()
+
+
+    val createOptions = PushGroup.CreateGroupOptionsV2(
+            name = "$newAddress group",
+            description = "group made my the user $newAddress for testing",
+            image = BASE_64_IMAGE,
+            members = mutableListOf(member1),
+            creatorAddress = newAddress,
+            isPublic = false,
+            creatorPgpPrivateKey = pgpPK,
+            env = ENV.staging,
+            admins = mutableListOf(),
+            config = PushGroup.GroupConfig(),
+            rules = mapOf()
+    )
+
+    val group = PushGroup.createGroupV2(createOptions).getOrThrow()
+
+    val options = PushGroup.UpdateGroupMemberOptions(
+            account = newAddress,
+            chatId = group.chatId,
+            pgpPrivateKey = pgpPK,
+            upsert = PushGroup.UpsertData(
+                    members = listOf(member2),
+                    admins = listOf(member3)
+            )
+    )
+    val updatedGroup = PushGroup.updateGroupMember(options, ENV.staging).getOrThrow()
+
+    assertEquals(updatedGroup.chatId, group.chatId)
   }
 
   @Test
@@ -47,7 +147,7 @@ class UpdateGroupTest {
     val (member1,_) = getNewSinger()
 
     // create group
-    val createOptions = PushGroup.CreateGroupOptions(
+    val createOptions = PushGroup.CreateGroupOptionsV2(
       name = "$newAddress group",
       description = "group made my the user $newAddress for testing",
       image = BASE_64_IMAGE,
@@ -55,14 +155,28 @@ class UpdateGroupTest {
       creatorAddress = newAddress,
       isPublic = false,
       creatorPgpPrivateKey = pgpPK,
-      env = ENV.staging
+            env = ENV.staging,
+            admins = mutableListOf(),
+            config = PushGroup.GroupConfig(),
+            rules = mapOf()
     )
 
-    val group = PushGroup.createGroup(createOptions).getOrThrow()
-    group.groupDescription = "update $newAddress"
+    val group = PushGroup.createGroupV2(createOptions).getOrThrow()
+    val newDescription = "update $newAddress"
 
-    val updatedGroup = PushGroup.updateGroup(group, newAddress, pgpPK, ENV.staging).getOrThrow()
-    assertEquals(updatedGroup.groupDescription, group.groupDescription)
+
+    val updatedGroup = PushGroup.updateGroupProfile(
+            PushGroup.UpdateGroupProfileOptions(
+                    groupDescription = newDescription,
+                    groupName = group.groupName,
+                    chatId = group.chatId,
+                    groupImage = group.groupImage,
+                    pgpPrivateKey = pgpPK,
+                    account = newAddress
+            ),
+            env = ENV.staging,
+    ).getOrThrow()
+    assertEquals(updatedGroup.groupDescription, newDescription)
   }
 
   @Test
@@ -74,7 +188,7 @@ class UpdateGroupTest {
     val (member1,_) = getNewSinger()
 
     // create group
-    val createOptions = PushGroup.CreateGroupOptions(
+    val createOptions = PushGroup.CreateGroupOptionsV2(
             name = "$newAddress group",
             description = "group made my the user $newAddress for testing",
             image = BASE_64_IMAGE,
@@ -82,14 +196,28 @@ class UpdateGroupTest {
             creatorAddress = newAddress,
             isPublic = false,
             creatorPgpPrivateKey = pgpPK,
-            env = ENV.staging
+            env = ENV.staging,
+            admins = mutableListOf(),
+            config = PushGroup.GroupConfig(),
+            rules = mapOf()
     )
 
-    val group = PushGroup.createGroup(createOptions).getOrThrow()
-    group.groupImage = "update $newAddress"
+    val group = PushGroup.createGroupV2(createOptions).getOrThrow()
+    val newImage = "update $newAddress"
 
-    val updatedGroup = PushGroup.updateGroup(group, newAddress, pgpPK, ENV.staging).getOrThrow()
-    assertEquals(updatedGroup.groupImage, group.groupImage)
+
+    val updatedGroup = PushGroup.updateGroupProfile(
+            PushGroup.UpdateGroupProfileOptions(
+                    groupDescription = group.groupDescription,
+                    groupName = group.groupName,
+                    chatId = group.chatId,
+                    groupImage = newImage,
+                    pgpPrivateKey = pgpPK,
+                    account = newAddress
+            ),
+            env = ENV.staging,
+    ).getOrThrow()
+    assertEquals(updatedGroup.groupImage, newImage)
   }
 
   @Test
@@ -98,20 +226,21 @@ class UpdateGroupTest {
     val newUser = PushUser.createUser(signer, ENV.staging).getOrThrow()
     val pgpPK = DecryptPgp.decryptPgpKey(newUser.encryptedPrivateKey, signer).getOrThrow()
 
-    val (member1,_) = getNewSinger()
-
-    val createOptions = PushGroup.CreateGroupOptions(
+    val createOptions = PushGroup.CreateGroupOptionsV2(
             name = "$newAddress group",
             description = "group made my the user $newAddress for testing",
             image = BASE_64_IMAGE,
-            members = mutableListOf(member1, PGP_LINKED_ADDRESS),
+            members = mutableListOf(PGP_LINKED_ADDRESS),
             creatorAddress = newAddress,
             isPublic = false,
             creatorPgpPrivateKey = pgpPK,
-            env = ENV.staging
+            env = ENV.staging,
+            admins = mutableListOf(),
+            config = PushGroup.GroupConfig(),
+            rules = mapOf()
     )
 
-    val group = PushGroup.createGroup(createOptions).getOrThrow()
+    val group = PushGroup.createGroupV2(createOptions).getOrThrow()
 
     ChatApprover(ApproveOptions(
             requesterAddress = group.chatId,
@@ -121,9 +250,10 @@ class UpdateGroupTest {
     )).approve().getOrThrow()
 
 
-    val newGroup = PushGroup.leaveGroup(group.chatId, PGP_LINKED_ADDRESS, PGP_PK, ENV.staging).getOrThrow()
+    PushGroup.leaveGroup(group.chatId, PGP_LINKED_ADDRESS, PGP_PK, ENV.staging).getOrThrow()
 
-    assertEquals(newGroup.members.size ,1)
-    assertEquals(newGroup.members[0].wallet, Helpers.walletToPCAIP(newAddress))
+    val members = PushGroup.getAllGroupMembers(chatId = group.chatId, env = ENV.staging)
+    assertEquals(members.size, 1)
+    assertEquals(members[0].address, Helpers.walletToPCAIP(newAddress))
   }
 }

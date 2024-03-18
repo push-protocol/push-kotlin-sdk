@@ -16,7 +16,22 @@ class PushUser {
         var name:String?,
         var desc:String?,
         var blockedUsersList:List<String>?,
-    )
+    ){
+        companion object {
+            fun fromJson(json: Map<String, Any?>): ProfileInfo {
+                return ProfileInfo(
+                        name = json["name"] as? String,
+                        desc = json["desc"] as? String,
+                        picture = json["picture"] as? String,
+                        blockedUsersList = (json["blockedUsersList"] as? List<*>)
+                                ?.filterIsInstance<String>(),
+                        verificationProof = json["profileVerificationProof"] as? String
+                )
+            }
+        }
+    }
+
+
 
     data class UserPgpPublicKey(val key: String, val signature: String)
 
@@ -25,10 +40,11 @@ class PushUser {
         val wallets: String,
         val publicKey: String,
         val encryptedPrivateKey: String,
-        val verificationProof: String,
+        val verificationProof: String?,
         val msgSent: Number,
         val maxMsgPersisted:Number,
-        val profile: PushUser.ProfileInfo
+        val profile: PushUser.ProfileInfo,
+        val origin: String? = null
     ){
        fun getUserPublicKey():String{
            return try {
@@ -37,6 +53,22 @@ class PushUser {
                publicKey
            }
        }
+
+        companion object {
+            fun fromJson(json: Map<String, Any>): UserProfile {
+                return UserProfile(
+                        msgSent = json["msgSent"] as Number,
+                        maxMsgPersisted = json["maxMsgPersisted"] as Number,
+                        did = json["did"] as String,
+                        wallets = json["wallets"] as String,
+                        profile = ProfileInfo.fromJson(json["profile"] as Map<String, Any>),
+                        encryptedPrivateKey = json["encryptedPrivateKey"] as String,
+                        publicKey = json["publicKey"] as String,
+                        verificationProof = json["verificationProof"] as String?,
+                        origin = json["origin"] as? String
+                )
+            }
+        }
     }
 
     data class EncryptedPrivateKey(
