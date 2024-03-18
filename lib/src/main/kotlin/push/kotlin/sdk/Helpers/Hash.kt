@@ -1,5 +1,6 @@
 package push.kotlin.sdk.HahHelper
 
+import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import org.web3j.crypto.Hash
 

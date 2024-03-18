@@ -1,25 +1,20 @@
 package push.kotlin.sdk.Group
 
-import com.fasterxml.jackson.annotation.Nulls
+import AESGCM
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.ResponseBody.Companion.toResponseBody
-import org.json.JSONObject
 import push.kotlin.sdk.*
 import push.kotlin.sdk.HahHelper.GenerateSHA256Hash
 import push.kotlin.sdk.JsonHelpers.GetJsonStringFromGenericKV
 import push.kotlin.sdk.JsonHelpers.ListToJsonString
-import java.util.*
 import push.kotlin.sdk.PushUser.UserProfile
+import java.util.*
 import javax.annotation.Nullable
 import kotlin.math.*
 
@@ -466,6 +461,38 @@ class PushGroup {
     }
   }
 
+  data class  UpdateGroupProfileOptions(
+          var account: String,
+          val chatId: String,
+          val groupName: String,
+          var groupDescription: String,
+          var groupImage: String,
+          var rules: Map<String, String?> = emptyMap(),
+          var pgpPrivateKey: String
+  )
+
+  data class UpdateGroupMemberOptions(
+          var account: String,
+          val chatId: String,
+          var upsert: UpsertData = UpsertData(),
+          val remove: List<String> = listOf(),
+          var pgpPrivateKey: String
+  )
+
+  class UpsertData(
+          val members: List<String> = emptyList(),
+          val admins: List<String> = emptyList()
+  ) {
+    fun toJson(): Map<String, List<String>> {
+      return mapOf(
+              "members" to members,
+              "admins" to admins
+      )
+    }
+  }
+
+
+
   companion object{
     public fun createGroupV2(options: CreateGroupOptionsV2): Result<PushGroupProfile> {
       try {
@@ -778,7 +805,7 @@ class PushGroup {
       )
     }
    
-    fun getCreateGroupHash(options: CreateGroupOptions):String{
+    private fun getCreateGroupHash(options: CreateGroupOptions):String{
 
       var createGroupJSONString = GetJsonStringFromGenericKV(listOf(
         "groupName" to JsonPrimitive(options.name),
@@ -855,7 +882,6 @@ class PushGroup {
 
       return  GenerateSHA256Hash(createGroupJSONString)
     }
-
     private fun createGroupService(payload:CreateGroupPayload, env: ENV):Result<PushGroupProfile>{
       val url = PushURI.createChatGroup(env)
       val mediaType = "application/json; charset=utf-8".toMediaType()
@@ -989,7 +1015,7 @@ class PushGroup {
 
       val convertedUpsert = mutableMapOf<String, List<String>>()
       for ((key, value) in options.upsert.toJson()) {
-        convertedUpsert[key] = value.map { Helpers.walletToPCAIP(it) };
+        convertedUpsert[key] = value.map { Helpers.walletToPCAIP(it) }
       }
 
       val convertedRemove = options.remove.map { Helpers.walletToPCAIP(it) }
@@ -999,16 +1025,16 @@ class PushGroup {
 
       val group = getGroupInfo(chatId = options.chatId, env) ?: throw Exception("Group not found")
 
-      var encryptedSecret: String? = null;
+      var encryptedSecret: String? = null
       if (!group.isPublic) {
         if (group.encryptedSecret != null) {
           val isMember = getGroupMemberStatus(chatId = options.chatId, did = connectedUser.did, env = env)!!.isMember
 
           val removeParticipantSet = convertedRemove.map { it.lowercase() }.toSet()
 
-          val groupMembers = getAllGroupMembersPublicKeys(chatId = options.chatId, env = env)
+          var groupMembers = getAllGroupMembersPublicKeys(chatId = options.chatId, env = env)
 
-          var sameMembers = true;
+          var sameMembers = true
 
           for (member in groupMembers) {
             if (removeParticipantSet.contains(member.did.lowercase())) {
@@ -1045,10 +1071,10 @@ class PushGroup {
       )
 
 
-      val hash = GenerateSHA256Hash(bodyToBeHashed);
+      val hash = GenerateSHA256Hash(bodyToBeHashed)
       val signature = Pgp.sign(options.pgpPrivateKey, hash).getOrElse { exception -> return Result.failure(exception) }
-      val sigType = "pgpv2";
-      val deltaVerificationProof ="$sigType:$signature:${Helpers.walletToPCAIP(connectedUser.did)}";
+      val sigType = "pgpv2"
+      val deltaVerificationProof ="$sigType:$signature:${Helpers.walletToPCAIP(connectedUser.did)}"
 
       val payload = mapOf(
               "upsert" to convertedUpsert,
