@@ -54,6 +54,9 @@ object PushURI {
     fun createChatGroup(env:ENV):String{
         return "${getBaseUri(env)}/chat/groups"
     }
+    fun createChatGroupV2(env:ENV):String{
+        return "${getBaseUri(env,"v2" )}/chat/groups"
+    }
 
     fun getGroup(chatId:String, env:ENV):String{
         return "${getBaseUri(env)}/chat/groups/$chatId"
@@ -89,6 +92,14 @@ object PushURI {
 
     fun updatedChatGroup(chatId:String, env:ENV):String{
         return "${getBaseUri(env)}/chat/groups/$chatId"
+    }
+
+    fun updatedChatGroupProfile(chatId:String, env:ENV):String{
+        return "${getBaseUri(env)}/chat/groups/$chatId/profile"
+    }
+
+    fun updatedChatGroupMember(chatId:String, env:ENV):String{
+        return "${getBaseUri(env)}/chat/groups/$chatId/members"
     }
 
     fun OptInChannel(env: ENV, channel: String): String {

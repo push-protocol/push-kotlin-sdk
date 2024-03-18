@@ -60,11 +60,11 @@ data class SendMessagePayload(
 
 data class ChatApprover(val approveOptions: ApproveOptions){
   fun getApprovePayload():Result<ApproveRequestPayload>{
-    val jsonString = GetJsonStringFromKV(listOf(
+    val jsonString = mapOf(
         "fromDID" to approveOptions.fromDID,
         "toDID" to approveOptions.toDID,
         "status" to "Approved"
-    ))
+    )
 
     val hash = GenerateSHA256Hash(jsonString)
 
