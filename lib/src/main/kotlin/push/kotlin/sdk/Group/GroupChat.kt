@@ -1,25 +1,20 @@
 package push.kotlin.sdk.Group
 
-import com.fasterxml.jackson.annotation.Nulls
+import AESGCM
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.ResponseBody.Companion.toResponseBody
-import org.json.JSONObject
 import push.kotlin.sdk.*
 import push.kotlin.sdk.HahHelper.GenerateSHA256Hash
 import push.kotlin.sdk.JsonHelpers.GetJsonStringFromGenericKV
 import push.kotlin.sdk.JsonHelpers.ListToJsonString
-import java.util.*
 import push.kotlin.sdk.PushUser.UserProfile
+import java.util.*
 import javax.annotation.Nullable
 import kotlin.math.*
 
@@ -179,7 +174,7 @@ fun validateGroupMemberUpdateOptions(
       throw Exception("Invalid role: $role. Allowed roles are ${allowedRoles.joinToString(", ")}.")
     }
 
-    if (value is List<*> && value.size > 1000) {
+    if ( value.size > 1000) {
       throw Exception("$role array cannot have more than 1000 addresses.")
     }
 
@@ -488,11 +483,6 @@ class PushGroup {
           val members: List<String> = emptyList(),
           val admins: List<String> = emptyList()
   ) {
-    constructor(json: Map<String, Any>) : this(
-            members = (json["members"] as? List<String>) ?: emptyList(),
-            admins = (json["admins"] as? List<String>) ?: emptyList()
-    )
-
     fun toJson(): Map<String, List<String>> {
       return mapOf(
               "members" to members,
@@ -815,7 +805,7 @@ class PushGroup {
       )
     }
    
-    fun getCreateGroupHash(options: CreateGroupOptions):String{
+    private fun getCreateGroupHash(options: CreateGroupOptions):String{
 
       var createGroupJSONString = GetJsonStringFromGenericKV(listOf(
         "groupName" to JsonPrimitive(options.name),
@@ -1025,7 +1015,7 @@ class PushGroup {
 
       val convertedUpsert = mutableMapOf<String, List<String>>()
       for ((key, value) in options.upsert.toJson()) {
-        convertedUpsert[key] = value.map { Helpers.walletToPCAIP(it) };
+        convertedUpsert[key] = value.map { Helpers.walletToPCAIP(it) }
       }
 
       val convertedRemove = options.remove.map { Helpers.walletToPCAIP(it) }
@@ -1035,7 +1025,7 @@ class PushGroup {
 
       val group = getGroupInfo(chatId = options.chatId, env) ?: throw Exception("Group not found")
 
-      var encryptedSecret: String? = null;
+      var encryptedSecret: String? = null
       if (!group.isPublic) {
         if (group.encryptedSecret != null) {
           val isMember = getGroupMemberStatus(chatId = options.chatId, did = connectedUser.did, env = env)!!.isMember
@@ -1044,7 +1034,7 @@ class PushGroup {
 
           var groupMembers = getAllGroupMembersPublicKeys(chatId = options.chatId, env = env)
 
-          var sameMembers = true;
+          var sameMembers = true
 
           for (member in groupMembers) {
             if (removeParticipantSet.contains(member.did.lowercase())) {
@@ -1081,10 +1071,10 @@ class PushGroup {
       )
 
 
-      val hash = GenerateSHA256Hash(bodyToBeHashed);
+      val hash = GenerateSHA256Hash(bodyToBeHashed)
       val signature = Pgp.sign(options.pgpPrivateKey, hash).getOrElse { exception -> return Result.failure(exception) }
-      val sigType = "pgpv2";
-      val deltaVerificationProof ="$sigType:$signature:${Helpers.walletToPCAIP(connectedUser.did)}";
+      val sigType = "pgpv2"
+      val deltaVerificationProof ="$sigType:$signature:${Helpers.walletToPCAIP(connectedUser.did)}"
 
       val payload = mapOf(
               "upsert" to convertedUpsert,

@@ -2,6 +2,7 @@ package push.kotlin.sdk.ProfileCreator
 
 import AESGCM
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -121,10 +122,15 @@ class ProfileUpdater(val userAddress: String, val userProfile: PushUser.ProfileI
 
         if(response.isSuccessful){
           return Result.success(true)
+        }else{
+          println(url)
+          println(GsonBuilder().serializeNulls().create().toJson(payload))
+          println("Error: ${response.code} ${response.message}")
         }
 
         return Result.failure(IllegalStateException(response.message))
       }catch (e:Exception){
+
         return Result.failure(IllegalStateException(e))
       }
     }

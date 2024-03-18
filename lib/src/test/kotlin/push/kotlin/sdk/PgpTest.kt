@@ -108,27 +108,24 @@ class PgpTest {
     val aes_secret = Pgp.decrypt(ENC_MESSAGE, PGP_PK).getOrThrow()
     assertEquals(aes_secret, "H58gh7d1AhOqQoU")
   }
+  @Test
+  fun pgpSignTest() {
+    val message = "This is a good place to find a city"
+    val signature = Pgp.sign(PGP_PK, message).getOrThrow()
 
-  class PgpTest {
+    val prefix = "-----BEGIN PGP SIGNATURE-----"
+    val suffix = "-----END PGP SIGNATURE-----"
 
-    @Test
-    fun pgpSignTest() {
-      val message = "This is a good place to find a city"
-      val signature = Pgp.sign(PGP_PK, message).getOrThrow()
+    val parts = signature.split("\n")
+    val actualPrefix = parts[0]
+    val actualSuffix = parts[parts.size - 2]
 
-      val prefix = "-----BEGIN PGP SIGNATURE-----"
-      val suffix = "-----END PGP SIGNATURE-----"
+    assertEquals(prefix, actualPrefix.trim())
+    assertEquals(suffix, actualSuffix.trim())
+  }
 
-      val parts = signature.split("\n")
-      val actualPrefix = parts[0]
-      val actualSuffix = parts[parts.size - 2]
-
-      assertEquals(prefix, actualPrefix.trim())
-      assertEquals(suffix, actualSuffix.trim())
-    }
-
-    @Test
-    fun pgpGenerate(){
+  @Test
+  fun pgpGenerate(){
       val prefix = "-----BEGIN PGP"
       val suffix = "-----END PGP"
 
@@ -140,5 +137,5 @@ class PgpTest {
       assert(privateKey.contains(prefix))
       assert(privateKey.contains(suffix))
     }
-  }
+
 }
