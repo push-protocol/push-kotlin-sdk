@@ -40,7 +40,7 @@ class PushUser {
         val wallets: String,
         val publicKey: String,
         val encryptedPrivateKey: String,
-        val verificationProof: String,
+        val verificationProof: String?,
         val msgSent: Number,
         val maxMsgPersisted:Number,
         val profile: PushUser.ProfileInfo,
@@ -57,14 +57,14 @@ class PushUser {
         companion object {
             fun fromJson(json: Map<String, Any>): UserProfile {
                 return UserProfile(
-                        msgSent = json["msgSent"] as Int,
-                        maxMsgPersisted = json["maxMsgPersisted"] as Int,
+                        msgSent = json["msgSent"] as Number,
+                        maxMsgPersisted = json["maxMsgPersisted"] as Number,
                         did = json["did"] as String,
                         wallets = json["wallets"] as String,
                         profile = ProfileInfo.fromJson(json["profile"] as Map<String, Any>),
                         encryptedPrivateKey = json["encryptedPrivateKey"] as String,
                         publicKey = json["publicKey"] as String,
-                        verificationProof = json["verificationProof"] as String,
+                        verificationProof = json["verificationProof"] as String?,
                         origin = json["origin"] as? String
                 )
             }

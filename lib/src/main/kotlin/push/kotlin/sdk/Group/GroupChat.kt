@@ -1,19 +1,26 @@
 package push.kotlin.sdk.Group
 
+import com.fasterxml.jackson.annotation.Nulls
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.ResponseBody.Companion.toResponseBody
+import org.json.JSONObject
 import push.kotlin.sdk.*
 import push.kotlin.sdk.HahHelper.GenerateSHA256Hash
 import push.kotlin.sdk.JsonHelpers.GetJsonStringFromGenericKV
 import push.kotlin.sdk.JsonHelpers.ListToJsonString
+import java.util.*
 import push.kotlin.sdk.PushUser.UserProfile
+import javax.annotation.Nullable
 import kotlin.math.*
 
 @Throws(IllegalArgumentException::class)
@@ -37,6 +44,63 @@ fun createGroupOptionValidator(option: PushGroup.CreateGroupOptions) {
   for (member in option.members) {
     if (!Helpers.isValidAddress(member)) {
       throw IllegalArgumentException("Invalid member address!")
+    }
+  }
+}
+
+@Throws(IllegalArgumentException::class)
+fun createGroupOptionV2Validator(option: PushGroup.CreateGroupOptionsV2) {
+  if (option.name.isEmpty()) {
+    throw IllegalArgumentException("groupName cannot be null or empty")
+  }
+
+  if (option.name.length > 50) {
+    throw IllegalArgumentException("groupName cannot be more than 50 characters")
+  }
+
+  if (option.description.length > 150) {
+    throw IllegalArgumentException("groupDescription cannot be more than 150 characters")
+  }
+
+  if (option.members.isEmpty() && option.admins.isEmpty()) {
+    throw IllegalArgumentException("members cannot be null")
+  }
+
+  for (member in option.members) {
+    if (!Helpers.isValidAddress(member)) {
+      throw IllegalArgumentException("Invalid member address!")
+    }
+  }
+
+  for (admin in option.admins) {
+    if (!Helpers.isValidAddress(admin)) {
+      throw IllegalArgumentException("Invalid admin address!")
+    }
+  }
+
+  validateScheduleDates(scheduleAt = option.config.scheduleAt, scheduleEnd = option.config.scheduleEnd)
+}
+
+@Throws(IllegalArgumentException::class)
+fun validateScheduleDates(scheduleAt: Date?, scheduleEnd: Date?) {
+  if (scheduleAt != null) {
+    val start = Date(scheduleAt.time)
+    val now = Date()
+
+    if (start < now) {
+      throw IllegalArgumentException("Schedule start time must be in the future.")
+    }
+
+    if (scheduleEnd != null) {
+      val end = Date(scheduleEnd.time)
+
+      if (end < now) {
+        throw IllegalArgumentException("Schedule end time must be in the future.")
+      }
+
+      if (start >= end) {
+        throw IllegalArgumentException("Schedule start time must be earlier than end time.")
+      }
     }
   }
 }
@@ -213,6 +277,46 @@ class PushGroup {
     }
   }
 
+  data class CreateGroupOptionsV2(
+          var name: String,
+          var description: String,
+          var image: String,
+          var members: MutableList<String>,
+          var admins: MutableList<String>,
+          var isPublic: Boolean,
+          var creatorAddress: String,
+          var groupType: String = "default",
+          var creatorPgpPrivateKey: String,
+          var env: ENV,
+          var config: GroupConfig,
+          var rules: Map<String, String?>?
+  ) {
+    init {
+      // Remove if group creator from the members list
+      creatorAddress.let { address ->
+        members.indexOfFirst { it == address }.let { index ->
+          if (index != -1) {
+            members.removeAt(index)
+          }
+        }
+      }
+
+      // Remove if group creator from the members list
+      creatorAddress.let { address ->
+        admins.indexOfFirst { it == address }.let { index ->
+          if (index != -1) {
+            admins.removeAt(index)
+          }
+        }
+      }
+
+      // Format the addresses
+      creatorAddress = Helpers.walletToPCAIP(creatorAddress)
+      members = Helpers.walletsToPCAIP(members) as MutableList<String>
+      admins = Helpers.walletsToPCAIP(admins) as MutableList<String>
+    }
+  }
+
   data class CreateGroupPayload(
       var groupName: String,
       var groupDescription: String,
@@ -228,6 +332,37 @@ class PushGroup {
       var verificationProof: String,
       var meta: String? = null
   )
+
+  data class CreateGroupPayloadV2(
+          @SerializedName("groupName") val groupName: String,
+          @SerializedName("groupDescription") val groupDescription: String,
+          @SerializedName("groupImage") val groupImage: String,
+          @SerializedName("rules") val rules: Map<String, String?>,
+          @SerializedName("isPublic") val isPublic: Boolean,
+          @SerializedName("groupType") val groupType: String,
+          @SerializedName("profileVerificationProof") val profileVerificationProof: String,
+          @SerializedName("config") val config: Config,
+          @SerializedName("members") val members: List<String>,
+          @SerializedName("admins") val admins: List<String>,
+          @SerializedName("idempotentVerificationProof") val idempotentVerificationProof: String
+  )
+
+  data class Config(
+      @Nullable @SerializedName("meta") val meta: String?,
+      @Nullable  @SerializedName("scheduleAt") val scheduleAt: String?,
+      @Nullable @SerializedName("scheduleEnd") val scheduleEnd: String?,
+      @Nullable @SerializedName("status") val status: String?,
+      @SerializedName("configVerificationProof") val configVerificationProof: String
+  )
+
+
+  data class GroupConfig(
+          var meta: String?= null,
+          var scheduleAt: Date?= null,
+          var scheduleEnd: Date?= null,
+          var status: String? = null,
+  )
+
 
   data class UpdateGroupPayload(
     var groupName: String,
@@ -317,7 +452,7 @@ class PushGroup {
                 address = json["address"] as String,
                 intent = json["intent"] as Boolean,
                 role = json["role"] as String,
-                userInfo = json["userInfo"]?.let { PushUser.UserProfile.fromJson(it as Map<String, Any>) }
+                userInfo = json["userInfo"]?.let { UserProfile.fromJson(it as Map<String, Any>) }
         )
       }
     }
@@ -369,6 +504,19 @@ class PushGroup {
 
 
   companion object{
+    public fun createGroupV2(options: CreateGroupOptionsV2): Result<PushGroupProfile> {
+      try {
+        createGroupOptionV2Validator(options)
+      } catch (e: Exception) {
+        return Result.failure(e)
+      }
+
+      val payload = getCreateGroupPayloadV2(options)
+
+      return createGroupServiceV2(payload, options.env)
+
+    }
+
     public fun createGroup(options:CreateGroupOptions):Result<PushGroupProfile>{
       try {
         createGroupOptionValidator(options)
@@ -400,12 +548,14 @@ class PushGroup {
       return updateGroupService(updatedGroup.chatId, payload, env)
     }
 
-    public fun leaveGroup(chatId: String, userAddress:String, userPgpPrivateKey:String, env:ENV):Result<PushGroupProfile>{
-      val group = PushGroup.getGroup(chatId,env) ?: return Result.failure(IllegalStateException("Group not found"))
-
-      group.members = group.members.filter { el -> !el.wallet.lowercase().contains(userAddress.lowercase()) }
-
-      return updateGroup(group, userAddress, userPgpPrivateKey,env)
+     fun leaveGroup(chatId: String, userAddress:String, userPgpPrivateKey:String, env:ENV):Result<PushGroupInfo>{
+    getGroup(chatId,env) ?: return Result.failure(IllegalStateException("Group not found"))
+    return updateGroupMember(UpdateGroupMemberOptions(
+              chatId = chatId,
+              remove = listOf(userAddress),
+              pgpPrivateKey = userPgpPrivateKey,
+              account = userAddress
+      ), env = env)
     }
 
     public fun getGroup(chatId: String, env: ENV):PushGroupProfile?{
@@ -499,7 +649,6 @@ class PushGroup {
       val response = client.newCall(request).execute()
       if (response.isSuccessful) {
         val jsonResponse = response.body?.string()
-        println("json $jsonResponse")
         val gson = Gson()
         val members = gson.fromJson(jsonResponse, Map::class.java)["members"] as? List<Map<String, String>>
                 ?: throw Exception("Failed to retrieve members")
@@ -595,6 +744,61 @@ class PushGroup {
       )
     }
 
+    @Throws(IllegalArgumentException::class)
+    private fun getCreateGroupPayloadV2(options: CreateGroupOptionsV2): CreateGroupPayloadV2 {
+
+      /**
+       * PROFILE VERIFICATION PROOF
+       */
+      val profileHash = getCreateGroupProfileHash(options)
+      val profileSignature = Pgp.sign(options.creatorPgpPrivateKey, profileHash).getOrElse { exception -> throw IllegalArgumentException(exception) }
+      val profileVerificationProof = "pgpv2:$profileSignature:${options.creatorAddress}";
+
+      /**
+       * CONFIG VERIFICATION PROOF
+       */
+      val configHash = getCreateGroupConfigHash(options)
+      val configSignature = Pgp.sign(options.creatorPgpPrivateKey, configHash).getOrElse { exception -> throw IllegalArgumentException(exception) }
+      val configVerificationProof = "pgpv2:$configSignature:${options.creatorAddress}";
+
+      /**
+       * IDEMPOTENT VERIFICATION PROOF
+       */
+      val idempotentHash = getCreateGroupIdempotentHash(options)
+      val idempotentSignature = Pgp.sign(options.creatorPgpPrivateKey, idempotentHash).getOrElse { exception -> throw IllegalArgumentException(exception) }
+      val idempotentVerificationProof = "pgpv2:$idempotentSignature:${options.creatorAddress}";
+
+
+      val configMap = mapOf(
+              "meta" to if(options.config.meta == null) "null" else options.config.meta,
+              "scheduleAt" to if(options.config.scheduleAt == null) "null" else options.config.scheduleAt?.toString(),
+              "scheduleEnd" to if(options.config.scheduleEnd == null) "null" else options.config.scheduleEnd?.toString(),
+              "status" to options.config.status,
+              "configVerificationProof" to configVerificationProof
+      )
+
+      return CreateGroupPayloadV2(
+              groupName = options.name,
+              groupDescription = options.description,
+              members = options.members,
+              groupImage = options.image,
+              isPublic = options.isPublic,
+              admins = options.admins,
+              profileVerificationProof = profileVerificationProof,
+              rules = if (options.rules == null) emptyMap() else options.rules!!,
+              idempotentVerificationProof = idempotentVerificationProof,
+              config = Config(
+                      meta = options.config.meta,
+                      scheduleAt = options.config.scheduleAt?.toString(),
+                      scheduleEnd = options.config.scheduleEnd?.toString(),
+                      status = options.config.status,
+                      configVerificationProof = configVerificationProof
+              ),
+              groupType = options.groupType
+
+      )
+    }
+
     fun getUpdateGroupPayload(updatedGroup:PushGroupProfile, verificationProof: String, userAddress: String):UpdateGroupPayload{
       val pendingMembers = updatedGroup.pendingMembers.map { el -> el.wallet }
       val membersList = updatedGroup.members.map { el -> el.wallet }
@@ -610,7 +814,7 @@ class PushGroup {
         verificationProof = verificationProof
       )
     }
-
+   
     fun getCreateGroupHash(options: CreateGroupOptions):String{
 
       var createGroupJSONString = GetJsonStringFromGenericKV(listOf(
@@ -634,7 +838,40 @@ class PushGroup {
       return  GenerateSHA256Hash(createGroupJSONString)
     }
 
-    private fun getUpdateGroupHash(updatedGroup: PushGroupProfile):String{
+    private fun getCreateGroupIdempotentHash(options: CreateGroupOptionsV2): String {
+
+      val body = mapOf(
+              "members" to options.members,
+              "admins" to options.admins,
+      )
+     return GenerateSHA256Hash(body)
+    }
+
+    private fun getCreateGroupConfigHash(options: CreateGroupOptionsV2): String {
+      val body = mapOf(
+              "meta" to options.config.meta,
+              "scheduleAt" to options.config.scheduleAt?.toString(),
+              "scheduleEnd" to options.config.scheduleEnd?.toString(),
+              "status" to options.config.status,
+      )
+
+     return  GenerateSHA256Hash(body)
+    }
+
+    private fun getCreateGroupProfileHash(options: CreateGroupOptionsV2): String {
+      val body = mapOf(
+              "groupName" to options.name,
+              "groupDescription" to options.description,
+              "groupImage" to options.image,
+              "rules" to if(options.rules == null) emptyMap() else options.rules,
+              "isPublic" to options.isPublic,
+              "groupType" to options.groupType,
+      )
+
+      return  GenerateSHA256Hash(body)
+    }
+
+    private fun getUpdateGroupHash(updatedGroup: PushGroupProfile): String {
       var createGroupJSONString = GetJsonStringFromGenericKV(listOf(
         "groupName" to JsonPrimitive(updatedGroup.groupName),
         "groupDescription" to JsonPrimitive(updatedGroup.groupDescription),
@@ -672,6 +909,29 @@ class PushGroup {
       } else {
         println(url)
         println(Gson().toJson(payload))
+        println("Error: ${response.code} ${response.message}}")
+        return Result.failure(IllegalStateException("Error: ${response.code} ${response.message}"))
+      }
+    }
+
+    private fun createGroupServiceV2(payload: CreateGroupPayloadV2, env: ENV): Result<PushGroupProfile> {
+      val url = PushURI.createChatGroupV2(env)
+      val mediaType = "application/json; charset=utf-8".toMediaType()
+      val body = GsonBuilder().serializeNulls().create().toJson(payload)
+              .toRequestBody(mediaType)
+              
+      val client = OkHttpClient()
+      val request =   Request.Builder().url(url).post(body).build()
+      val response = client.newCall(request).execute()
+
+      if (response.isSuccessful) {
+        val jsonResponse = response.body?.string()
+        val gson = Gson()
+        val apiResponse = gson.fromJson(jsonResponse, PushGroup.PushGroupProfile::class.java)
+        return Result.success(apiResponse)
+      } else {
+        println(url)
+        println(GsonBuilder().serializeNulls().create().toJson(payload))
         println("Error: ${response.code} ${response.message}")
         return  Result.failure(IllegalStateException("Error: ${response.code} ${response.message}"))
       }
