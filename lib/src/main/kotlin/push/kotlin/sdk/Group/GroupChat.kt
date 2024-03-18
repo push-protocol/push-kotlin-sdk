@@ -466,43 +466,6 @@ class PushGroup {
     }
   }
 
-  data class  UpdateGroupProfileOptions(
-          var account: String,
-          val chatId: String,
-          val groupName: String,
-          var groupDescription: String,
-          var groupImage: String,
-          var rules: Map<String, String?> = emptyMap(),
-          var pgpPrivateKey: String
-  )
-
-  data class UpdateGroupMemberOptions(
-          var account: String,
-          val chatId: String,
-          var upsert: UpsertData = UpsertData(),
-          val remove: List<String> = listOf(),
-          var pgpPrivateKey: String
-  )
-
-  class UpsertData(
-          val members: List<String> = emptyList(),
-          val admins: List<String> = emptyList()
-  ) {
-    constructor(json: Map<String, Any>) : this(
-            members = (json["members"] as? List<String>) ?: emptyList(),
-            admins = (json["admins"] as? List<String>) ?: emptyList()
-    )
-
-    fun toJson(): Map<String, List<String>> {
-      return mapOf(
-              "members" to members,
-              "admins" to admins
-      )
-    }
-  }
-
-
-
   companion object{
     public fun createGroupV2(options: CreateGroupOptionsV2): Result<PushGroupProfile> {
       try {
