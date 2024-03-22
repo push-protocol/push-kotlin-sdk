@@ -25,26 +25,69 @@ fun ByteArray.toHexString(): String {
 }
 
 data class UserProfileBlock(val userAddress: String, val userPgpPrivateKey: String, val addresses:List<String>, val env: ENV,){
-  public fun block():Result<Boolean>{
-    val _addresses = addresses.map { el -> Helpers.walletToPCAIP(el) }
+  /*  public fun block():Result<Boolean>{
+      val addresses = addresses.map { el -> Helpers.walletToPCAIP(el) }
 
-    val user = PushUser.getUser(userAddress, env) ?: return Result.failure(IllegalStateException("User $userAddress not found"))
-    val userProfile = user.profile
+      val user = PushUser.getUser(userAddress, env) ?: return Result.failure(IllegalStateException("User $userAddress not found"))
+      val userProfile = user.profile
 
-    if(userProfile.blockedUsersList == null){
-      userProfile.blockedUsersList = _addresses
-    }else{
-      val _lists:MutableList<String> = userProfile.blockedUsersList!!.toMutableList()
-      _addresses.forEach { el ->
+      print("blocked list: ");
+
+      if(userProfile.blockedUsersList == null){
+  //      userProfile.blockedUsersList = addresses
+        userProfile.blockedUsersList = emptyList()
+      }
+  //    else{
+  //      val lists:MutableList<String> = userProfile.blockedUsersList!!.toMutableList()
+  //      addresses.forEach { el ->
+  //        if (!userProfile.blockedUsersList!!.contains(Helpers.walletToPCAIP(el))){
+  //          lists += el
+  //        }
+  //      }
+  //
+  //      userProfile.blockedUsersList = lists
+  //    }
+
+      val lists:MutableList<String> = userProfile.blockedUsersList!!.toMutableList()
+      addresses.forEach { el ->
         if (!userProfile.blockedUsersList!!.contains(Helpers.walletToPCAIP(el))){
-          _lists += el
+          lists += el
         }
       }
 
-      userProfile.blockedUsersList = _lists
+      userProfile.blockedUsersList = lists
+
+      return ProfileUpdater(userAddress, userProfile, userPgpPrivateKey, env).updateUserProfile()
+    }
+  */
+
+  public fun block(): Result<Boolean> {
+    val user = PushUser.getUser(userAddress, env)
+            ?: return Result.failure(IllegalStateException("User $userAddress not found"))
+
+
+    val userProfile = user.profile
+    println("userProfile.blockedUsersList: ${userProfile.blockedUsersList}")
+
+    val addressAlreadyBlock: List<String> =
+            userProfile.blockedUsersList ?: emptyList()
+
+    val addressToBlock: MutableList<String> = mutableListOf()
+    addressToBlock.addAll(addressAlreadyBlock)
+
+    val newAddressesToBlock = Helpers.walletsToPCAIP(addresses)
+
+    for (address in newAddressesToBlock) {
+      if (!addressAlreadyBlock.contains(address)) {
+        addressToBlock.add(address)
+      }
     }
 
-    return ProfileUpdater(userAddress, userProfile, userPgpPrivateKey, env).updateUserProfile()
+    userProfile.blockedUsersList = addressToBlock
+    println("userProfile.blockedUsersList: ${userProfile.blockedUsersList}")
+    val profile = PushUser.ProfileInfo(picture = userProfile.picture, name = userProfile.name, blockedUsersList = addressToBlock,
+            desc = userProfile.desc, verificationProof = null)
+    return PushUser.updateUser(userAddress = userAddress, userProfile = profile, userPgpPrivateKey = userPgpPrivateKey, env)
   }
 
   public fun unblock():Result<Boolean>{
@@ -70,25 +113,41 @@ data class UserProfileBlock(val userAddress: String, val userPgpPrivateKey: Stri
 
 
 class ProfileUpdater(val userAddress: String, val userProfile: PushUser.ProfileInfo, val userPgpPrivateKey:String, val env: ENV){
-  public fun updateUserProfile():Result<Boolean>{
-    val hash = getUpdatedProfileHash(userProfile)
+  fun updateUserProfile(): Result<Boolean> {
+    val hash = getUpdatedProfileHashV2(userProfile)
+    println("hash ${hash}")
+
     val sig = Pgp.sign(userPgpPrivateKey, hash).getOrElse { exception -> return Result.failure(exception) }
     val sigType = "pgpv2"
     val verificationProof = "$sigType:$sig"
 
     val payload = getUpdateUserPayload(userProfile, verificationProof)
+    println(payload)
     return updateUserService(payload, userAddress, env)
   }
 
-  data class UpdateUserPayload(val name:String, val desc:String, val picture:String, val blockedUsersList:List<String>, val verificationProof:String)
+  data class UpdateUserPayload(val name: String?, val desc: String?, val picture: String?, val blockedUsersList: List<String>?, val verificationProof: String)
 
   companion object{
+    fun getUpdatedProfileHashV2(updatedUser: PushUser.ProfileInfo): String {
+      val jsonString = mapOf(
+              "name" to updatedUser.name,
+              "desc" to updatedUser.desc,
+              "picture" to updatedUser.picture,
+              "blockedUsersList" to if (updatedUser.blockedUsersList == null) emptyList() else
+                updatedUser.blockedUsersList,
+      )
+      println(jsonString)
+
+      return GenerateSHA256Hash(jsonString)
+    }
+
     fun getUpdatedProfileHash(updatedUser:PushUser.ProfileInfo):String{
       var profileJsonString = GetJsonStringFromGenericKV(listOf(
-        Pair("name", JsonPrimitive(updatedUser.name ?: " ")),
-        Pair("desc", JsonPrimitive(updatedUser.desc ?: " ")),
-        Pair("picture", JsonPrimitive(updatedUser.picture ?: " ")),
-        "blockedUsersList" to JsonPrimitive("--members--replace"),
+              Pair("name", JsonPrimitive(updatedUser.name ?: " ")),
+              Pair("desc", JsonPrimitive(updatedUser.desc ?: " ")),
+              Pair("picture", JsonPrimitive(updatedUser.picture ?: " ")),
+              "blockedUsersList" to JsonPrimitive("--members--replace"),
       ))
 
       val members:List<String> = updatedUser.blockedUsersList ?: listOf<String>();
@@ -102,9 +161,9 @@ class ProfileUpdater(val userAddress: String, val userProfile: PushUser.ProfileI
 
     fun getUpdateUserPayload(updatedUser: PushUser.ProfileInfo, verificationProof: String):UpdateUserPayload{
       return UpdateUserPayload(
-        name = updatedUser.name ?: " ",
-        desc = updatedUser.desc ?: " ",
-        picture = updatedUser.picture ?: " ",
+              name = updatedUser.name,
+              desc = updatedUser.desc,
+              picture = updatedUser.picture,
         blockedUsersList = updatedUser.blockedUsersList ?: listOf(),
         verificationProof = verificationProof
       )
@@ -114,7 +173,7 @@ class ProfileUpdater(val userAddress: String, val userProfile: PushUser.ProfileI
       try {
         val url = PushURI.updateUser(env, userAddress)
         val mediaType = "application/json; charset=utf-8".toMediaType()
-        val body = Gson().toJson(payload).toRequestBody(mediaType)
+        val body = GsonBuilder().serializeNulls().create().toJson(payload).toRequestBody(mediaType)
 
         val client = OkHttpClient()
         val request = Request.Builder().url(url).put(body).build()
