@@ -106,7 +106,7 @@ class PushUser {
         }
 
         public fun blockUser(userAddress: String, userPgpPrivateKey: String, addressToBlock:List<String>,env: ENV):Result<Boolean>{
-            return UserProfileBlock(userAddress, userPgpPrivateKey, addressToBlock, env).block()
+            return UserProfileBlock(userAddress=userAddress,userPgpPrivateKey= userPgpPrivateKey,addresses= addressToBlock, env).block()
         }
 
         public fun unblockUser(userAddress: String, userPgpPrivateKey: String, addressToUnBlock:List<String>,env: ENV):Result<Boolean>{
