@@ -10,6 +10,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import push.kotlin.sdk.*
 import push.kotlin.sdk.HahHelper.GenerateSHA256Hash
+import push.kotlin.sdk.HahHelper.GenerateSHA256Hash_
 import push.kotlin.sdk.JsonHelpers.GetJsonStringFromGenericKV
 import push.kotlin.sdk.JsonHelpers.GetJsonStringFromKV
 import push.kotlin.sdk.JsonHelpers.ListToJsonString
@@ -67,7 +68,6 @@ data class UserProfileBlock(val userAddress: String, val userPgpPrivateKey: Stri
 
 
     val userProfile = user.profile
-    println("userProfile.blockedUsersList: ${userProfile.blockedUsersList}")
 
     val addressAlreadyBlock: List<String> =
             userProfile.blockedUsersList ?: emptyList()
@@ -84,7 +84,6 @@ data class UserProfileBlock(val userAddress: String, val userPgpPrivateKey: Stri
     }
 
     userProfile.blockedUsersList = addressToBlock
-    println("userProfile.blockedUsersList: ${userProfile.blockedUsersList}")
     val profile = PushUser.ProfileInfo(picture = userProfile.picture, name = userProfile.name, blockedUsersList = addressToBlock,
             desc = userProfile.desc, verificationProof = null)
     return PushUser.updateUser(userAddress = userAddress, userProfile = profile, userPgpPrivateKey = userPgpPrivateKey, env)
@@ -114,15 +113,12 @@ data class UserProfileBlock(val userAddress: String, val userPgpPrivateKey: Stri
 
 class ProfileUpdater(val userAddress: String, val userProfile: PushUser.ProfileInfo, val userPgpPrivateKey:String, val env: ENV){
   fun updateUserProfile(): Result<Boolean> {
-    val hash = getUpdatedProfileHashV2(userProfile)
-    println("hash ${hash}")
-
+    val hash = getUpdatedProfileHash(userProfile)
     val sig = Pgp.sign(userPgpPrivateKey, hash).getOrElse { exception -> return Result.failure(exception) }
     val sigType = "pgpv2"
     val verificationProof = "$sigType:$sig"
 
     val payload = getUpdateUserPayload(userProfile, verificationProof)
-    println(payload)
     return updateUserService(payload, userAddress, env)
   }
 
@@ -131,13 +127,13 @@ class ProfileUpdater(val userAddress: String, val userProfile: PushUser.ProfileI
   companion object{
     fun getUpdatedProfileHashV2(updatedUser: PushUser.ProfileInfo): String {
       val jsonString = mapOf(
-              "name" to updatedUser.name,
-              "desc" to updatedUser.desc,
-              "picture" to updatedUser.picture,
+              "name" to if (updatedUser.name != null) updatedUser.name else " ",
+              "desc" to if (updatedUser.desc != null) updatedUser.desc else " ",
+              "picture" to if (updatedUser.picture != null) updatedUser.picture else " ",
               "blockedUsersList" to if (updatedUser.blockedUsersList == null) emptyList() else
                 updatedUser.blockedUsersList,
       )
-      println(jsonString)
+      println("body to sign $jsonString")
 
       return GenerateSHA256Hash(jsonString)
     }
@@ -156,14 +152,14 @@ class ProfileUpdater(val userAddress: String, val userProfile: PushUser.ProfileI
       profileJsonString = profileJsonString.replace("\"[","[")
       profileJsonString = profileJsonString.replace("]\"","]")
 
-      return GenerateSHA256Hash(profileJsonString)
+      return GenerateSHA256Hash_(profileJsonString)
     }
 
     fun getUpdateUserPayload(updatedUser: PushUser.ProfileInfo, verificationProof: String):UpdateUserPayload{
       return UpdateUserPayload(
-              name = updatedUser.name,
-              desc = updatedUser.desc,
-              picture = updatedUser.picture,
+              name = updatedUser.name ?: " ",
+              desc = updatedUser.desc ?: " ",
+              picture = updatedUser.picture ?: " ",
         blockedUsersList = updatedUser.blockedUsersList ?: listOf(),
         verificationProof = verificationProof
       )

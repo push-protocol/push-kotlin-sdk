@@ -1,15 +1,12 @@
 package push.kotlin.sdk.GroupTests
 
 import BASE_64_IMAGE
-import com.google.gson.Gson
 import getNewSinger
-import getSingerWithKey
 import org.junit.jupiter.api.Test
 import push.kotlin.sdk.*
 import push.kotlin.sdk.ChatFunctions.ApproveOptions
 import push.kotlin.sdk.ChatFunctions.ChatApprover
 import push.kotlin.sdk.Group.PushGroup
-import push.kotlin.sdk.HahHelper.GenerateSHA256Hash
 import kotlin.test.assertEquals
 
 class UpdateGroupTest {
@@ -225,6 +222,7 @@ class UpdateGroupTest {
     val (newAddress, signer) = getNewSinger()
     val newUser = PushUser.createUser(signer, ENV.staging).getOrThrow()
     val pgpPK = DecryptPgp.decryptPgpKey(newUser.encryptedPrivateKey, signer).getOrThrow()
+
 
     val createOptions = PushGroup.CreateGroupOptionsV2(
             name = "$newAddress group",

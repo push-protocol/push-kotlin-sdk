@@ -1,7 +1,12 @@
 package push.kotlin.sdk
 
+import BASE_64_IMAGE
 import getNewSinger
 import getSingerWithKey
+import kotlinx.serialization.json.JsonPrimitive
+import push.kotlin.sdk.HahHelper.GenerateSHA256Hash
+import push.kotlin.sdk.HahHelper.GenerateSHA256Hash_
+import push.kotlin.sdk.JsonHelpers.GetJsonStringFromGenericKV
 import push.kotlin.sdk.ProfileCreator.ProfileCreator
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -89,23 +94,41 @@ class PushUserTest {
     @Test
     fun updateUserUpdate() {
         val (userAddress, signer) = getNewSinger()
-//        val (userAddress, signer) = //getSingerWithKey("e2d9d13fa1f37e786596ac57f6be8beb3b9e388e9a5f28d7f69a787b9360e29e")
         val user = PushUser.createUser(signer, ENV.staging).getOrThrow();
+
         val pgpPK = DecryptPgp.decryptPgpKey(user.encryptedPrivateKey, signer).getOrThrow()
 
-        user.profile.picture = "picture"
-        user.profile.name = "null"
-        user.profile.desc = "null"
-        println("####${user.profile}")
-        user.profile.blockedUsersList = listOf("eip155:0x1669d6484494eed4995bf4985e545245a280c38e")
+        val userData = PushUser.getUser(userAddress, ENV.staging) ?: throw IllegalStateException("")
 
-//        user.profile.blockedUsersList = mutableListOf("eip155:0x1669d6484494eed4995bf4985e545245a280c38e")
+        userData.profile.blockedUsersList = mutableListOf("eip155:0x1669d6484494eed4995bf4985e545245a280c38e")
 
-        PushUser.updateUser(userAddress, user.profile, pgpPK, ENV.staging).getOrThrow()
+        PushUser.updateUser(userAddress, userData.profile, pgpPK, ENV.staging).getOrThrow()
 
         val userAgain = PushUser.getUser(userAddress, ENV.staging) ?: throw IllegalStateException("")
 
-//        assertEquals(userAgain.profile.picture, "picture")
+//        assertEquals(userAgain.profile.picture, picture)
+
+//        assertEquals(userAgain.profile.blockedUsersList?.size, 1)
+    }
+
+    @Test
+    fun updateUserForSigner() {
+
+        val (userAddress, signer) = getSingerWithKey("14908f59f935507f280b92f88127df9af92ec31cc7799dddb1e001a59de1d6fe")
+
+        val userData = PushUser.getUser(userAddress, ENV.staging) ?: throw IllegalStateException("")
+        val pgpPK = DecryptPgp.decryptPgpKey(userData.encryptedPrivateKey, signer).getOrThrow()
+
+        val picture = BASE_64_IMAGE
+
+        userData.profile.blockedUsersList = mutableListOf("eip155:0x1669d6484494eed4995bf4985e545245a280c38e")
+
+        PushUser.updateUser(userAddress, userData.profile, pgpPK, ENV.staging).getOrThrow()
+
+        val userAgain = PushUser.getUser(userAddress, ENV.staging) ?: throw IllegalStateException("")
+
+
+        assertEquals(userAgain.profile.blockedUsersList?.size, 1)
     }
 
     @Test fun userBlockUnBlock(){
@@ -114,38 +137,36 @@ class PushUserTest {
         val user = PushUser.createUser(signer, ENV.staging).getOrThrow();
         val pgpPK = DecryptPgp.decryptPgpKey(user.encryptedPrivateKey, signer).getOrThrow()
 
-
-
-        val (addrs1, _) = getNewSinger()
-        val (addrs2, _) = getNewSinger()
-
+        val (address1, _) = getNewSinger()
+        val (address2, _) = getNewSinger()
 
         // Block tests
-        PushUser.blockUser(userAddress, pgpPK, listOf(addrs1),ENV.staging).getOrThrow()
-//        var userAgain = PushUser.getUser(userAddress, ENV.staging) ?: throw  IllegalStateException("")
-//        assertEquals(userAgain.profile.blockedUsersList!!.size, 1)
-        return
-//        PushUser.blockUser(userAddress, pgpPK, listOf(addrs1),ENV.staging).getOrThrow()
-//        userAgain = PushUser.getUser(userAddress, ENV.staging) ?: throw  IllegalStateException("")
-//        assertEquals(userAgain.profile.blockedUsersList!!.size, 1)
+        PushUser.blockUser(userAddress, pgpPK, listOf(address1), ENV.staging).getOrThrow()
+        var userAgain = PushUser.getUser(userAddress, ENV.staging) ?: throw IllegalStateException("")
+        assertEquals(userAgain.profile.blockedUsersList!!.size, 1)
 
-//        PushUser.blockUser(userAddress, pgpPK, listOf(addrs2),ENV.staging).getOrThrow()
-//        userAgain = PushUser.getUser(userAddress, ENV.staging) ?: throw  IllegalStateException("")
-//        assertEquals(userAgain.profile.blockedUsersList!!.size, 2)
-//
-//        // Un Block tests
-//        PushUser.unblockUser(userAddress, pgpPK, listOf(addrs2),ENV.staging).getOrThrow()
-//        userAgain = PushUser.getUser(userAddress, ENV.staging) ?: throw  IllegalStateException("")
-//        assertEquals(userAgain.profile.blockedUsersList!!.size, 1)
-//
-//        PushUser.unblockUser(userAddress, pgpPK, listOf(addrs2),ENV.staging).getOrThrow()
-//        userAgain = PushUser.getUser(userAddress, ENV.staging) ?: throw  IllegalStateException("")
-//        assertEquals(userAgain.profile.blockedUsersList!!.size, 1)
-//
-//        PushUser.unblockUser(userAddress, pgpPK, listOf(addrs1),ENV.staging).getOrThrow()
-//        userAgain = PushUser.getUser(userAddress, ENV.staging) ?: throw  IllegalStateException("")
-//        assertEquals(userAgain.profile.blockedUsersList!!.size, 0)
+        PushUser.blockUser(userAddress, pgpPK, listOf(address1), ENV.staging).getOrThrow()
+        userAgain = PushUser.getUser(userAddress, ENV.staging) ?: throw IllegalStateException("")
+        assertEquals(userAgain.profile.blockedUsersList!!.size, 1)
+
+        PushUser.blockUser(userAddress, pgpPK, listOf(address2), ENV.staging).getOrThrow()
+        userAgain = PushUser.getUser(userAddress, ENV.staging) ?: throw IllegalStateException("")
+        assertEquals(userAgain.profile.blockedUsersList!!.size, 2)
+
+        // Un Block tests
+        PushUser.unblockUser(userAddress, pgpPK, listOf(address2), ENV.staging).getOrThrow()
+        userAgain = PushUser.getUser(userAddress, ENV.staging) ?: throw IllegalStateException("")
+        assertEquals(userAgain.profile.blockedUsersList!!.size, 1)
+
+        PushUser.unblockUser(userAddress, pgpPK, listOf(address2), ENV.staging).getOrThrow()
+        userAgain = PushUser.getUser(userAddress, ENV.staging) ?: throw IllegalStateException("")
+        assertEquals(userAgain.profile.blockedUsersList!!.size, 1)
+
+        PushUser.unblockUser(userAddress, pgpPK, listOf(address1), ENV.staging).getOrThrow()
+        userAgain = PushUser.getUser(userAddress, ENV.staging) ?: throw IllegalStateException("")
+        assertEquals(userAgain.profile.blockedUsersList!!.size, 0)
 
     }
+
 
 }
