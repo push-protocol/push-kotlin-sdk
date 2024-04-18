@@ -46,8 +46,11 @@ object PushURI {
     fun acceptChatRequest(env: ENV):String{
         return "${getBaseUri(env)}/chat/request/accept"
     }
+    fun rejectChatRequest(env: ENV):String{
+        return "${getBaseUri(env)}/chat/request/reject"
+    }
 
-    fun getConversationHashReslove(env: ENV,threadHash:String, limit: Number):String{
+    fun getConversationHashResolve(env: ENV, threadHash:String, limit: Number):String{
         return  "${getBaseUri(env)}/chat/conversationhash/$threadHash?fetchLimit=${limit}"
     }
 
@@ -60,6 +63,9 @@ object PushURI {
 
     fun getGroup(chatId:String, env:ENV):String{
         return "${getBaseUri(env)}/chat/groups/$chatId"
+    }
+    fun getGroupAccess(chatId:String,did:String, env:ENV):String{
+        return "${getBaseUri(env)}/chat/groups/$chatId/access/$did"
     }
 
     fun getGroupInfo(chatId:String, env:ENV):String{

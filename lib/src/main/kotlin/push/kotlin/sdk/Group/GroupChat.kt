@@ -239,6 +239,13 @@ class PushGroup {
           val eventType: String?
   )
 
+
+  data class GroupAccess(
+          val entry: Boolean,
+          val chat: Boolean,
+          val rules: Map<String, Any>? = null
+  )
+
   data class Member(
     val wallet: String,
     val publicKey: String?,
@@ -568,6 +575,26 @@ class PushGroup {
       return null
     }
 
+    public fun getGroupAccess(chatId: String, did: String, env: ENV): GroupAccess? {
+
+      val url = PushURI.getGroupAccess(chatId, Helpers.walletToPCAIP(did), env)
+      val client = OkHttpClient()
+
+      val request = Request.Builder().url(url).build()
+      val response = client.newCall(request).execute()
+
+      if (response.isSuccessful) {
+        val jsonResponse = response.body?.string()
+        val gson = Gson()
+        return gson.fromJson(jsonResponse, GroupAccess::class.java)
+      } else {
+        println("Error: ${response.code} ${response.message}")
+      }
+
+      response.close()
+      return null
+    }
+
      fun getGroupInfo(chatId: String, env: ENV):PushGroupInfo?{
       val url = PushURI.getGroupInfo(chatId, env)
       val client = OkHttpClient()
@@ -708,7 +735,7 @@ class PushGroup {
       if (response.isSuccessful) {
         val jsonResponse = response.body?.string()
         val gson = Gson()
-        val apiResponse = gson.fromJson(jsonResponse, PushGroup.GroupMemberStatus::class.java)
+        val apiResponse = gson.fromJson(jsonResponse, GroupMemberStatus::class.java)
         return apiResponse
       } else {
         println("Error: ${response.code} ${response.message}")
@@ -1105,7 +1132,7 @@ class PushGroup {
         println("Error: ${response.code} ${response.message}")
         return  Result.failure(IllegalStateException("Error: ${response.code} ${response.message}"))
       }
-
     }
+
   }
 }

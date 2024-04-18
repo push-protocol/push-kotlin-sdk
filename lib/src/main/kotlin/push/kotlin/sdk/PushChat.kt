@@ -162,8 +162,8 @@ class PushChat{
 
     }
 
-    public fun getConversationHistory(threadhash: String, limit: Number, pgpPrivateKey: String, toDecrypt: Boolean, env: ENV):Array<Message>{
-      val url = PushURI.getConversationHashReslove(env,threadhash,limit)
+    public fun getConversationHistory(threadHash: String, limit: Number, pgpPrivateKey: String, toDecrypt: Boolean, env: ENV):Array<Message>{
+      val url = PushURI.getConversationHashResolve(env,threadHash,limit)
 
       // Create an OkHttpClient instance
       val client = OkHttpClient()
@@ -237,6 +237,7 @@ class PushChat{
 
       return newFeed
     }
+
 
     public fun resolveIpfs(cid:String?, env:ENV):PushChat.Message? {
       if(cid == null){

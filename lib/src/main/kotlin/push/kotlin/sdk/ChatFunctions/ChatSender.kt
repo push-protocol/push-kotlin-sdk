@@ -44,6 +44,12 @@ data class ApproveRequestPayload(
   var verificationProof: String
 )
 
+data class RejectRequestPayload(
+        val fromDID:String,
+        val toDID: String,
+        var verificationProof: String
+)
+
 data class SendMessagePayload(
     var fromDID: String,
     var toDID: String,
@@ -81,6 +87,44 @@ data class ChatApprover(val approveOptions: ApproveOptions){
 
   }
 
+  fun getRejectPayload():Result<RejectRequestPayload>{
+    val jsonString = mapOf(
+            "fromDID" to approveOptions.fromDID,
+            "toDID" to approveOptions.toDID
+    )
+
+    val hash = GenerateSHA256Hash(jsonString)
+
+    val sig = Pgp.sign(approveOptions.pgpPrivateKey, hash).getOrElse { exception -> return Result.failure(exception) }
+
+    return Result.success(RejectRequestPayload(
+            fromDID = approveOptions.fromDID,
+            toDID = approveOptions.toDID,
+            verificationProof = "pgp:$sig"
+    ))
+
+  }
+
+  fun reject() : Result<String>{
+    val payload = getRejectPayload().getOrElse { exception -> return Result.failure(exception) }
+    val url = PushURI.rejectChatRequest(approveOptions.env)
+
+    val mediaType = "application/json; charset=utf-8".toMediaType()
+    val body = Gson().toJson(payload).toRequestBody(mediaType)
+
+    val client = OkHttpClient()
+    val request = Request.Builder().url(url).put(body).build()
+    val response = client.newCall(request).execute()
+
+    return if (response.isSuccessful) {
+      val apiResponse = response.body ?: return  Result.failure(IllegalStateException(""))
+      Result.success(apiResponse.string())
+    } else {
+      println("Error: ${response.code} ${response.message}")
+      Result.failure(IllegalStateException("Error: ${response.code} ${response.message}"))
+    }
+  }
+
   fun approve():Result<String>{
     val payload = getApprovePayload().getOrElse { exception -> return Result.failure(exception) }
     val url = PushURI.acceptChatRequest(approveOptions.env)
@@ -100,6 +144,8 @@ data class ChatApprover(val approveOptions: ApproveOptions){
       Result.failure(IllegalStateException("Error: ${response.code} ${response.message}"))
     }
   }
+
+
 }
 
 data class ChatSender(val sendOptions:SendOptions){
