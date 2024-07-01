@@ -131,6 +131,9 @@ object PushURI {
     fun getSubscribers(channel: String, page: Number, limit: Number, env: ENV): String {
         return "${getBaseUri(env)}/channels/${channel}/subscribers?&page=${page}&limit=${limit}"
     }
+    fun getChannelNotifications(channel: String, query: String, env: ENV): String {
+        return "${getBaseUri(env, version = "v2")}/channels/${channel}/notifications?${query}"
+    }
 
     fun isUserSubscribed(env: ENV): String {
         if (env == ENV.prod){

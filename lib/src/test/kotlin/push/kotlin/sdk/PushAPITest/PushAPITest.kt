@@ -11,7 +11,7 @@ class PushAPITest {
         val (newAddress, signer) = getNewSinger()
         val pushAPI = PushAPI.initialize(signer)
 
-        val info = pushAPI.info();
+        val info = pushAPI.profile.info();
         assertEquals("eip155:$newAddress", info?.did)
     }
 }

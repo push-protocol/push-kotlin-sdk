@@ -4,22 +4,27 @@ import MockEIP712OptOutSigner
 import MockEIP712OptinSigner
 import org.junit.jupiter.api.Test
 import push.kotlin.sdk.ENV
-import push.kotlin.sdk.channels.Channel
-import push.kotlin.sdk.channels.ChannelOpt
-import push.kotlin.sdk.channels.ChannelSearch
-import push.kotlin.sdk.channels.ChannelSubscriber
+import push.kotlin.sdk.channels.*
 import kotlin.test.assertEquals
 
 class ChannelTests {
     @Test
-    fun GettingChannel(){
+    fun GettingChannelNotification() {
         val channelAddress = "0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78"
-        val res =  Channel.getChannel(channelAddress, ENV.staging)!!
+        val option = ChannelNotification.GetChannelOptionsType(channel = "0xD8634C39BBFd4033c0d3289C4515275102423681", env = ENV.staging)
+        val res = ChannelNotification.getChannelNotifications(option).getOrThrow()
+        assert(res.total > 0)
+    }
+
+    @Test
+    fun GettingChannel() {
+        val channelAddress = "0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78"
+        val res = Channel.getChannel(channelAddress, ENV.staging)!!
         assertEquals(channelAddress, res.channel)
     }
 
     @Test
-    fun GettingAllChannels () {
+    fun GettingAllChannels() {
         val result = Channel.getAllChannels(1, 10, ENV.staging)
         val expectedCount = 10
         assertEquals(expectedCount, result.channels.size)
@@ -34,7 +39,7 @@ class ChannelTests {
 
     @Test
     fun SearchChannelByName() {
-        val res = ChannelSearch.searchChannels(query ="rayan", page= 1, limit = 10, order = "desc", env = ENV.staging ).getOrThrow()
+        val res = ChannelSearch.searchChannels(query = "rayan", page = 1, limit = 10, order = "desc", env = ENV.staging).getOrThrow()
         val actual = res.itemcount
         assertEquals(true, actual > 1)
     }
@@ -49,7 +54,7 @@ class ChannelTests {
 
     @Test
     fun testNoexistingChannelsOnSearch() {
-        val res = ChannelSearch.searchChannels("rayansdsdsdsd",1, 10, "desc", ENV.staging).getOrThrow()
+        val res = ChannelSearch.searchChannels("rayansdsdsdsd", 1, 10, "desc", ENV.staging).getOrThrow()
         val asExpected = 0
         assertEquals(asExpected, res.itemcount)
     }
@@ -76,16 +81,16 @@ class ChannelTests {
         val optOutSinger = MockEIP712OptOutSigner()
 
         val userAddress = optInSigner.getAddress().getOrThrow()
-        var success = ChannelOpt.subscribe( "0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78", userAddress, optInSigner, ENV.staging).getOrThrow()
+        var success = ChannelOpt.subscribe("0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78", userAddress, optInSigner, ENV.staging).getOrThrow()
         assert(success)
 
-        success = ChannelOpt.unsubscribe( "0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78", userAddress, optOutSinger, ENV.staging).getOrThrow()
+        success = ChannelOpt.unsubscribe("0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78", userAddress, optOutSinger, ENV.staging).getOrThrow()
         assert(success)
 
-        success = ChannelOpt.subscribe( "0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78", userAddress, optInSigner, ENV.staging).getOrThrow()
+        success = ChannelOpt.subscribe("0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78", userAddress, optInSigner, ENV.staging).getOrThrow()
         assert(success)
 
-        success = ChannelOpt.unsubscribe( "0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78", userAddress, optOutSinger, ENV.staging).getOrThrow()
+        success = ChannelOpt.unsubscribe("0x2AEcb6DeE3652dA1dD6b54D5fd4f7D8F43DaEb78", userAddress, optOutSinger, ENV.staging).getOrThrow()
         assert(success)
     }
 }
