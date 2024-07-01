@@ -2,6 +2,7 @@ package push.kotlin.sdk.PushAPI
 
 import push.kotlin.sdk.DecryptPgp
 import push.kotlin.sdk.ENV
+import push.kotlin.sdk.PushNotification.ChannelAPI
 import push.kotlin.sdk.PushUser
 import push.kotlin.sdk.Signer
 
@@ -15,15 +16,23 @@ class PushAPI(
 ) {
     var chat: Chat
     var profile: Profile
+    var channel: ChannelAPI
 
     init {
         chat = Chat(account, env, decryptedPgpPvtKey, signer)
         profile = Profile(account, env, decryptedPgpPvtKey, signer)
+        channel = ChannelAPI(account, env, decryptedPgpPvtKey, signer)
     }
 
 
-
-    data class PushAPIInitializeOptions(val version: PushUser.ENCRYPTION_TYPE = PushUser.ENCRYPTION_TYPE.PGP_V3, val versionMeta: Map<String, Map<String, String>>? = null, val autoUpgrade: Boolean = true, val origin: String? = null, val showHttpLog: Boolean = false, val env: ENV = ENV.prod)
+    data class PushAPIInitializeOptions(
+            val version: PushUser.ENCRYPTION_TYPE = PushUser.ENCRYPTION_TYPE.PGP_V3,
+            val versionMeta: Map<String, Map<String, String>>? = null,
+            val autoUpgrade: Boolean = true,
+            val origin: String? = null,
+            val showHttpLog: Boolean = false,
+            val env: ENV = ENV.prod
+    )
 
 
     companion object {

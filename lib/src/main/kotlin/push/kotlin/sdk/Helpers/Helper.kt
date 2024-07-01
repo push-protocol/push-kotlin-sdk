@@ -60,6 +60,10 @@ class Helpers {
             return WalletUtils.isValidAddress(address)
         }
 
+        fun getQueryParams(params: Map<String, String>): String {
+            return params.entries.joinToString("&") { "${it.key}=${it.value}" }
+        }
+
     }
 }
 

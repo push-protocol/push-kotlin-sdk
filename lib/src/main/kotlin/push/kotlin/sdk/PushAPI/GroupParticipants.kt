@@ -46,7 +46,7 @@ class GroupParticipants(
                         page = options.page,
                         pending = options.filter?.pending,
                         limit = options.limit,
-                        role = if (options.filter?.role == Group.GroupRoles.MEMBER) "admin" else "member",
+                        role = if (options.filter?.role == Group.GroupRoles.ADMIN) "admin" else "member",
                 ),
                 env
         )
