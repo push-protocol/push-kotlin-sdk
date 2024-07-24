@@ -44,6 +44,9 @@ dependencies {
     implementation("org.json:json:20210307")
     implementation("com.soywiz.korlibs.krypto:krypto:2.4.12")
 
+    implementation("io.socket:socket.io-client:2.0.1")
+
+
     api("com.google.protobuf:protobuf-kotlin-lite:3.22.3")
 
 
